@@ -1,11 +1,9 @@
 import glm
 
+
 class GameObject:
-
-
     def __init__(self, name : str, **attribs):
         self.name = name
-        
         self.position = glm.vec3(0, 0, 0)
         self.rotation = glm.vec3(0, 0, 0)
         
@@ -17,11 +15,15 @@ class GameObject:
 
     def ready(self) -> None:
         for component in self.components:
-            component.ready(self)
+            component.ready()
 
     def update(self, delta : float) -> None:
         for component in self.components:
-            component.update(self, delta)
+            component.update(delta)
+    
+    def render(self) -> None:
+        for component in self.components:
+            component.render()
     
     def getGlobalPosition(self) -> glm.vec3:
         if self.parent:
