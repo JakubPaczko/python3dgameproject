@@ -9,6 +9,7 @@ class Scene:
         self.gameObjects : Dict[int, GameObject] = {}
         self.systems : List[ecs.systems.System] = []
         self.app = app
+        self.ctx = app.ctx
 
     def add_system(self, system):
         self.systems.append(system)

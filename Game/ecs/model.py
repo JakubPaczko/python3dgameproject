@@ -180,8 +180,8 @@ class BaseModel():
         return m_model;
 
     def render(self):
-        self.update()
         self.m_model = self.get_model_matrix()
+        self.update()
         self.vao.render()
 
 class CubeModel(BaseModel):

@@ -11,7 +11,6 @@ SENSIVITY = 0.2
 
 class Camera:
     def __init__(self, app):
-        self.app = app
         self.aspect_ratio = app.WIN_SIZE[0] / app.WIN_SIZE[1]
         self.position = glm.vec3(2, 3, 3)
         self.up = glm.vec3(0, 1, 0)
@@ -19,7 +18,7 @@ class Camera:
         self.forward = glm.vec3(0, 0, -1)
         self.yaw = 0
         self.pitch = 0
-
+        self.app = app
         self.m_view = self.get_view_matrix()
         self.m_proj = self.get_projection_matrix()
 

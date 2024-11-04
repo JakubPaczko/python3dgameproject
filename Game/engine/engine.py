@@ -2,8 +2,6 @@ import sys
 import pygame as pg
 import moderngl as mgl
 from ecs.model import *
-from camera import Camera
-from light import Light
 from ecs.gameObject import GameObject
 import ecs.systems 
 import ecs.component
@@ -33,23 +31,26 @@ class Engine:
         self.time = 0
         self.delta_time = 0
         self.clock = pg.time.Clock()
-        self.camera = Camera(self)
-        self.light = Light()
 
-# 
-        game_object = GameObject()
+
+# -- test scene
         self.scene = Scene(self)
-        system = ecs.systems.TestSystem(scene=self.scene)
+        system = ecs.systems.RenderSystem(scene=self.scene)
         self.scene.add_system(system)
-        testcomponent = ecs.component.TestComponent(gameObject=game_object)
+
+        game_object = GameObject()
+        game_object.position = glm.vec3(0, -1, 0)
+        testcomponent = ecs.component.ModelComponent(gameObject=game_object)
         game_object.addComponent(testcomponent)
         self.scene.add_entity(game_object)
 
-# 
-        self.mesh = Mesh(self)
-        self.cube = CubeModel(self)
-        self.cube.set_vao('cube')
-        self.cube.set_texture(0)
+        game_object2 = GameObject()
+        game_object2.position = glm.vec3(0, 1, 0)
+        testcomponent2 = ecs.component.ModelComponent(gameObject=game_object2)
+        game_object2.addComponent(testcomponent2)
+        self.scene.add_entity(game_object2)
+
+#  ---------------
 
     def check_events(self):
         for event in pg.event.get():
@@ -58,21 +59,11 @@ class Engine:
                 pg.quit()
                 sys.exit()
     
-    def render(self):
-        # self.ctx.clear(color=(0.08, 0.16, 0.18))
-        # self.scene.render()
-        # pg.display.flip()
-                # Render the scene to the low-resolution framebuffer
-        pass
-
-
-
-
     def get_time(self):
         self.time = pg.time.get_ticks() * 0.001
     
     def run(self):
-            # Create the low-resolution framebuffer
+        # Create the low-resolution framebuffer
         low_res_fbo = self.ctx.framebuffer(
             color_attachments=[self.ctx.texture(self.RESOLUTION, 4)]
         )
@@ -124,17 +115,14 @@ class Engine:
             self.delta_time = self.clock.tick(120)
             self.get_time()
             self.check_events()
-            self.camera.update()
-            self.render()
 
              # Render the scene to the low-resolution framebuffer
             low_res_fbo.use()
             self.ctx.clear(0.1, 0.1, 0.1)  # Clear to a dark gray
 
             # Draw a red rectangle in the low-resolution framebuffer
-            # self.scene.render()
-            self.cube.render()
             self.scene.update()
+
             # Render the low-res texture to the full screen
             self.ctx.screen.use()
             self.ctx.clear(0.0, 0.0, 0.0)  # Clear the screen
