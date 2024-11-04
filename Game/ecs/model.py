@@ -1,7 +1,7 @@
 import numpy as np
 import glm
 import pygame as pg
-from .component import Component
+from ecs.component import Component
 
 class ShaderProgram:
     def __init__(self, ctx):
@@ -139,27 +139,52 @@ class Mesh:
         self.vao.destroy()
         self.texture.destroy()
 
-class BaseModel(Component):
-    def __init__(self, app, vao_name, tex_id):
-        self.app = app
+class BaseModel():
+    def __init__(self, app):
         self.m_model = self.get_model_matrix()
-        self.tex_id = tex_id
-        self.vao = app.mesh.vao.vaos[vao_name]
-        self.program = self.vao.program
+        self.app = app
         self.camera = self.app.camera
+    
+    def set_vao(self, vao_name):
+        self.vao = self.app.mesh.vao.vaos[vao_name]
+        self.program = self.vao.program
+        
+        self.program['u_texture_0'] = 0
+
+        self.program['m_proj'].write(self.camera.m_proj)
+        self.program['m_view'].write(self.camera.m_view)
+        self.program['m_model'].write(self.m_model)
+
+        self.program['light.position'].write(self.app.light.position)
+        self.program['light.Ia'].write(self.app.light.Ia)
+        self.program['light.Id'].write(self.app.light.Id)
+        self.program['light.Is'].write(self.app.light.Is)
+
+    def set_texture(self, tex_id):
+        self.tex_id = tex_id
+        
+        self.texture = self.app.mesh.texture.texture
+        self.texture.use()
 
     def get_model_matrix(self):
         m_model = glm.mat4()
+        # if self.gameObject:
+        #     m_model = glm.translate(m_model, self.gameObject.getGlobalPosition())
+
+        #     m_model = glm.rotate(m_model, glm.radians(self.gameObject.rotation.x), glm.vec3(1, 0, 0))
+        #     m_model = glm.rotate(m_model, glm.radians(self.gameObject.rotation.y), glm.vec3(0, 1, 0))
+        #     m_model = glm.rotate(m_model, glm.radians(self.gameObject.rotation.z), glm.vec3(0, 0, 1))
+
+        #     m_model = glm.scale(m_model, self.gameObject.scale)
+
         return m_model;
 
     def render(self):
         self.update()
+        self.m_model = self.get_model_matrix()
         self.vao.render()
 
 class CubeModel(BaseModel):
-    def __init__(self, app, vao_name = 'cube', tex_id = 0):
-        super().__init__(app, vao_name, tex_id)
-        self.on_init()
 
     def update(self):
         self.texture.use()
@@ -169,8 +194,9 @@ class CubeModel(BaseModel):
     
     def on_init(self):
         self.texture = self.app.mesh.texture.texture
-        self.program['u_texture_0'] = 0
         self.texture.use()
+
+        self.program['u_texture_0'] = 0
 
         self.program['m_proj'].write(self.camera.m_proj)
         self.program['m_view'].write(self.camera.m_view)

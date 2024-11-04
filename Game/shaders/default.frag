@@ -65,5 +65,7 @@ vec3 getLight(vec3 color){
 void main(){
     vec3 color = texture(u_texture_0, uv_0).rgb;
     color = getLight(color);
+    // color = getLight(cellShade( vec4(color, 1.0) ).rgb );
     fragColor = Posterize(vec4(color, 0.5));
+    // fragColor = vec4(color, 1.0);
 } 

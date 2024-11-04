@@ -1,22 +1,27 @@
 import sys
 import pygame as pg
 import moderngl as mgl
-from components.model import *
+from ecs.model import *
 from camera import Camera
 from light import Light
+from ecs.gameObject import GameObject
+import ecs.systems 
+import ecs.component
+from ecs.scene import Scene
 
 class Engine:
-    def __init__(self, win_size=(320, 200)):
+    def __init__(self, win_size=(1920, 1080), resolution = (int(1920/4), int(1080/4))):
         #init pygame modules
         pg.init()
         #set window size
         self.WIN_SIZE = win_size
+        self.RESOLUTION = resolution
 
         pg.display.gl_set_attribute(pg.GL_CONTEXT_MAJOR_VERSION, 3)
         pg.display.gl_set_attribute(pg.GL_CONTEXT_MINOR_VERSION, 3)
         pg.display.gl_set_attribute(pg.GL_CONTEXT_PROFILE_MASK, pg.GL_CONTEXT_PROFILE_CORE)
 
-        pg.display.set_mode((self.WIN_SIZE[0] * 4, self.WIN_SIZE[1] * 4), flags=pg.OPENGL | pg.DOUBLEBUF)
+        pg.display.set_mode((self.WIN_SIZE[0], self.WIN_SIZE[1]), flags=pg.OPENGL | pg.DOUBLEBUF)
 
         pg.event.set_grab(True)
         pg.mouse.set_visible(False)
@@ -31,9 +36,20 @@ class Engine:
         self.camera = Camera(self)
         self.light = Light()
 
-        self.mesh = Mesh(self)
+# 
+        game_object = GameObject()
+        self.scene = Scene(self)
+        system = ecs.systems.TestSystem(scene=self.scene)
+        self.scene.add_system(system)
+        testcomponent = ecs.component.TestComponent(gameObject=game_object)
+        game_object.addComponent(testcomponent)
+        self.scene.add_entity(game_object)
 
-        self.scene = CubeModel(self)
+# 
+        self.mesh = Mesh(self)
+        self.cube = CubeModel(self)
+        self.cube.set_vao('cube')
+        self.cube.set_texture(0)
 
     def check_events(self):
         for event in pg.event.get():
@@ -58,7 +74,7 @@ class Engine:
     def run(self):
             # Create the low-resolution framebuffer
         low_res_fbo = self.ctx.framebuffer(
-            color_attachments=[self.ctx.texture(self.WIN_SIZE, 4)]
+            color_attachments=[self.ctx.texture(self.RESOLUTION, 4)]
         )
         # Set nearest filtering for sharp scaling
         low_res_fbo.color_attachments[0].filter = (mgl.NEAREST, mgl.NEAREST)
@@ -116,8 +132,9 @@ class Engine:
             self.ctx.clear(0.1, 0.1, 0.1)  # Clear to a dark gray
 
             # Draw a red rectangle in the low-resolution framebuffer
-            self.scene.render()
-            
+            # self.scene.render()
+            self.cube.render()
+            self.scene.update()
             # Render the low-res texture to the full screen
             self.ctx.screen.use()
             self.ctx.clear(0.0, 0.0, 0.0)  # Clear the screen
