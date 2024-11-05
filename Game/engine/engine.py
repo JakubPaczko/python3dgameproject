@@ -27,6 +27,7 @@ class Engine:
 
         self.ctx = mgl.create_context()
         self.ctx.enable(flags=mgl.DEPTH_TEST | mgl.CULL_FACE)
+        # self.ctx.wireframe = True
 
         self.time = 0
         self.delta_time = 0
@@ -44,10 +45,19 @@ class Engine:
         game_object.addComponent(testcomponent)
         self.scene.add_entity(game_object)
 
+        # for x in range(0, 10):
+        #     for y in range(0, 10):
+        #         for z in range(0, 10):
+        x = 1
+        y = 1
+        z = 1
         game_object2 = GameObject()
-        game_object2.position = glm.vec3(0, 1, 0)
-        testcomponent2 = ecs.component.ModelComponent(gameObject=game_object2)
-        game_object2.addComponent(testcomponent2)
+        game_object2.position = glm.vec3(2 * x, 2 *y , 2 * z)
+        testcomponent2 = ecs.component.ModelComponent(gameObject=game_object2, vao_name='skull', tex_id=1)
+        testcomponent3 = ecs.component.AABBColliderComponent(gameObject=game_object2)
+        game_object2.addComponent(testcomponent3)
+        # game_object2.addComponent(testcomponent2)
+        # game_object2.scale = glm.vec3(0.01, 0.01, 0.01)
         self.scene.add_entity(game_object2)
 
 #  ---------------
@@ -117,17 +127,21 @@ class Engine:
             self.check_events()
 
              # Render the scene to the low-resolution framebuffer
-            low_res_fbo.use()
-            self.ctx.clear(0.1, 0.1, 0.1)  # Clear to a dark gray
+            # low_res_fbo.use()
+            self.ctx.screen.use()
+           
+            self.ctx.clear(0.1, 0.1, 0.1, depth=1.0)  # Clear to a dark gray
 
-            # Draw a red rectangle in the low-resolution framebuffer
             self.scene.update()
 
             # Render the low-res texture to the full screen
-            self.ctx.screen.use()
-            self.ctx.clear(0.0, 0.0, 0.0)  # Clear the screen
-            low_res_fbo.color_attachments[0].use(location=0)  # Use texture as input
-            quad_vao.render(mgl.TRIANGLE_FAN)  # Draw the full-screen quad
+            # self.ctx.screen.use()
+            # self.ctx.clear(0.0, 0.0, 0.0, depth=1.0)  # Clear the screen
+
+            
+            # low_res_fbo.color_attachments[0].use(location=0)  # Use texture as input
+            # quad_vao.render(mgl.TRIANGLE_FAN)  # Draw the full-screen quad
+            
 
             # Update the display
             pg.display.flip()

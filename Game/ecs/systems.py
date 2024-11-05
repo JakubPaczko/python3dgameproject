@@ -13,12 +13,8 @@ class System:
     def __init__(self, scene):
         self.scene : Scene = scene
     
-    def update():
+    def update(self):
         pass
-
-class RenderSystem(System):
-    def __init__(self, scene):
-        super().__init__(scene)
 
 class TestSystem(System):
     def __init__(self, scene):
@@ -29,9 +25,9 @@ class TestSystem(System):
             component : TestComponent = x.get_component(TestComponent)
             print(component.x)
             component.x += 0.1
-
-
+        
 class RenderSystem(System):
+
     def __init__(self, scene):
         super().__init__(scene)
         self.ctx = scene.ctx
@@ -44,19 +40,32 @@ class RenderSystem(System):
     def update(self):
         # self.ctx.clear(0.1, 0.1, 0.1)
         self.camera.update()
+        self.light.position = self.camera.position
 
         for entity in self.scene.filter_enitities_by_component(ModelComponent):
             component : ModelComponent = entity.get_component(ModelComponent)
             
-            texture = self.mesh.texture.texture
+            texture = self.mesh.texture.textures[component.tex_id]
             texture.use()
-            
-            m_model = self.get_model_matrix(entity)
-            vao = self.get_vao(component.vao_name, m_model)
+            m_model = self.get_model_matrix(entity.get_global_position(), entity.rotation, entity.scale)
+
+            vao = self.mesh.vao.vaos[component.vao_name]
+            self.update_vao(vao, m_model)
+            # vao = self.get_vao(component.vao_name, m_model)
             # self.update_vao(component.vao, m_model)
             
             
             vao.render()
+
+        for entity in self.scene.filter_enitities_by_component(AABBColliderComponent):
+            component : AABBColliderComponent = entity.get_component(AABBColliderComponent)
+            
+            m_model = self.get_model_matrix(entity.get_global_position(), entity.rotation, entity.scale * component.size)
+            vao = self.mesh.vao.vaos['AABB_col']
+            self.update_wireframe_vao(vao, m_model)
+            
+            
+            vao.render(mgl.LINES)
         
     def get_vao(self, vao_name, m_model):
         vao = self.mesh.vao.vaos[vao_name]
@@ -83,21 +92,37 @@ class RenderSystem(System):
         program['m_view'].write(self.camera.m_view)
         program['m_model'].write(m_model)
 
-        program['light.position'].write(self.app.light.position)
-        program['light.Ia'].write(self.app.light.Ia)
-        program['light.Id'].write(self.app.light.Id)
-        program['light.Is'].write(self.app.light.Is)
+        program['light.position'].write(self.light.position)
+        program['light.Ia'].write(self.light.Ia)
+        program['light.Id'].write(self.light.Id)
+        program['light.Is'].write(self.light.Is)
     
+    def update_wireframe_vao(self, vao, m_model):
+        program = vao.program
+
+        program['m_proj'].write(self.camera.m_proj)
+        program['m_view'].write(self.camera.m_view)
+        program['m_model'].write(m_model)
+
+
     @staticmethod
-    def get_model_matrix(gameObject) -> glm.mat4:
+    def get_model_matrix(position : glm.vec3, rotation : glm.vec3, scale : glm.vec3) -> glm.mat4:
         m_model = glm.mat4()
         
-        m_model = glm.translate(m_model, gameObject.get_global_position())
+        m_model = glm.translate(m_model, position)
 
-        m_model = glm.rotate(m_model, glm.radians(gameObject.rotation.x), glm.vec3(1, 0, 0))
-        m_model = glm.rotate(m_model, glm.radians(gameObject.rotation.y), glm.vec3(0, 1, 0))
-        m_model = glm.rotate(m_model, glm.radians(gameObject.rotation.z), glm.vec3(0, 0, 1))
+        m_model = glm.rotate(m_model, glm.radians(rotation.x), glm.vec3(1, 0, 0))
+        m_model = glm.rotate(m_model, glm.radians(rotation.y), glm.vec3(0, 1, 0))
+        m_model = glm.rotate(m_model, glm.radians(rotation.z), glm.vec3(0, 0, 1))
 
-        m_model = glm.scale(m_model, gameObject.scale)
+        m_model = glm.scale(m_model, scale)
     
         return m_model
+    
+class CollisionSystem(System):
+    def __init__(self, scene):
+        super().__init__(scene)
+    
+    def update(self):
+        for entity in self.scene.filter_enitities_by_component(AABBColliderComponent):
+            component : AABBColliderComponent = entity.get_component(AABBColliderComponent)

@@ -1,6 +1,9 @@
 import numpy as np
 import glm
 import pygame as pg
+import pywavefront
+import moderngl as mgl
+
 from ecs.component import Component
 
 class ShaderProgram:
@@ -8,6 +11,8 @@ class ShaderProgram:
         self.ctx = ctx
         self.programs = {}
         self.programs['default'] = self.get_program('default')
+        self.programs['wireframe'] = self.get_program('wireframe')
+
     
     def get_program(self, shader_name):
         with open(f'shaders/{shader_name}.vert') as file:
@@ -27,6 +32,8 @@ class VBO:
     def __init__(self, ctx):
         self.vbos = {}
         self.vbos['cube'] = CubeVbo(ctx)
+        self.vbos['skull'] = SkullVBO(ctx)
+        self.vbos['cube_wireframe'] = CubeWireframeVBO(ctx)
 
     def destroy(self):
         [vbo.destroy() for vbo in self.vbos.values()]
@@ -61,8 +68,8 @@ class CubeVbo(BaseVBO):
             return np.array(data, dtype='f4')
     
     def get_vertex_data(self):
-        vertices = [(-1, -1, 1), (1, -1, 1,),  (1, 1, 1),  (-1, 1, 1),
-                    (-1, 1, -1), (-1, -1, -1), (1, -1, -1), (1, 1, -1)]
+        vertices = [(-0.5, -0.5, 0.5), (0.5, -0.5, 0.5,),  (0.5, 0.5, 0.5),  (-0.5, 0.5, 0.5),
+                    (-0.5, 0.5, -0.5), (-0.5, -0.5, -0.5), (0.5, -0.5, -0.5), (0.5, 0.5, -0.5)]
 
         indices = [(0, 2, 3), (0, 1, 2), (1, 7, 2), (1, 6, 7),
                    (6, 5, 4), (4, 7, 6), (3, 4, 5), (3, 5, 0),
@@ -93,7 +100,40 @@ class CubeVbo(BaseVBO):
         vertex_data = np.hstack([tex_coord_data, vertex_data])
 
         return vertex_data
+
+class CubeWireframeVBO(CubeVbo):
+    def __init__(self, ctx):
+        super().__init__(ctx)
+        self.format = '3f'
+        self.attrib = ['in_position']
     
+    def get_vertex_data(self):
+        vertices = [(-0.5, -0.5, 0.5), (0.5, -0.5, 0.5,),  (0.5, 0.5, 0.5),  (-0.5, 0.5, 0.5),
+                    (-0.5, 0.5, -0.5), (-0.5, -0.5, -0.5), (0.5, -0.5, -0.5), (0.5, 0.5, -0.5)]
+
+        indices = [(0, 5), (1, 6), (2, 7), (3, 4),
+                   (2, 3), (2, 1), (3, 0), (0, 1),
+                   (4, 5), (4, 7), (7, 6), (6, 5)]
+        # indices = [(0, 2, 3), (0, 1, 2), (1, 7, 2), (1, 6, 7),
+        #            (6, 5, 4), (4, 7, 6), (3, 4, 5), (3, 5, 0),
+        #            (3, 7, 4), (3, 2, 7), (0, 6, 1), (0, 5, 6)]
+        vertex_data = self.get_data(vertices, indices)
+        
+        return vertex_data
+
+class SkullVBO(BaseVBO):
+    def __init__(self, ctx):
+        super().__init__(ctx)
+        self.format = '2f 3f 3f'
+        self.attrib = ['in_texcoord_0', 'in_normal', 'in_position']
+
+    def get_vertex_data(self):
+        objs = pywavefront.Wavefront('objects/skull/skull.obj', cache=True, parse=True)
+        obj = objs.materials.popitem()[1]
+        vertex_data = obj.vertices
+        vertex_data = np.array(vertex_data, dtype='f4')
+        return vertex_data
+
 class VAO:
     def __init__(self, ctx):
         self.ctx = ctx
@@ -105,6 +145,14 @@ class VAO:
         self.vaos['cube'] = self.get_vao(
             program = self.program.programs['default'],
             vbo = self.vbo.vbos['cube'] )
+
+        self.vaos['AABB_col'] = self.get_vao(
+            program = self.program.programs['wireframe'],
+            vbo = self.vbo.vbos['cube_wireframe'] )
+
+        self.vaos['skull'] = self.get_vao(
+            program = self.program.programs['default'],
+            vbo = self.vbo.vbos['skull'] )
         
     def get_vao(self, program, vbo):
         vao = self.ctx.vertex_array(program, [(vbo.vbo, vbo.format, *vbo.attrib)])
@@ -117,7 +165,23 @@ class VAO:
 class Texture:
     def __init__(self, ctx, path='textures/test2.png'):
         self.ctx = ctx
-        self.texture = self.get_texture(path)
+        self.textures = {}
+        self.textures[0] = self.get_texture(path)
+        self.textures[1] = self.get_texture('objects/skull/polygon_texture.png')
+        # self.textures['skybox'] = self.get_texture_cube()
+
+    def get_texture_cube(self, dir_path, ext='png'):
+        faces = ['right', 'left', 'top', ' botton', 'front', 'left']
+        textures = [pg.image.load(dir_path + f'{face}.{ext}').convert() for face in faces] 
+
+        size = textures[0].get_size()
+        texture_cube = self.ctx.texture_cube(size=size, components=3, data=None)
+
+        for i in range(6):
+            texture_data = pg.image.tostring(textures[i], 'RGB')
+            texture_cube.write(face=i, data=texture_data)
+        
+        return texture_cube
 
     def get_texture(self, path):
         texture = pg.image.load(path).convert()
