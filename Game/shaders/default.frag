@@ -67,5 +67,6 @@ void main(){
     color = getLight(color);
     // color = getLight(cellShade( vec4(color, 1.0) ).rgb );
     // fragColor = Posterize(vec4(color, 0.5));
+    // fragColor = cellShade(vec4(color, 1.0));
     fragColor = vec4(color, 1.0);
 } 

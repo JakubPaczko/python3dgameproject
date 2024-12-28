@@ -32,6 +32,7 @@ class CharacterBody(Component):
     def __init__(self, gameObject):
         super().__init__(gameObject)
         self.velocity : glm.vec3 = glm.vec3(0, 0, 0)
+        self.gravity : float = 1.0
 
 class ModelComponent(Component):
     def __init__(self, gameObject, vao_name = 'cube', tex_id=0):

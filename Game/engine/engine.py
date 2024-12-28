@@ -38,27 +38,42 @@ class Engine:
         self.scene = Scene(self)
         system = ecs.systems.RenderSystem(scene=self.scene)
         self.scene.add_system(system)
+        self.scene.add_system(ecs.systems.CollisionSystem(self.scene))
+        self.scene.add_system(ecs.systems.PhysicsSystem(self.scene))
+
+
 
         game_object = GameObject()
         game_object.position = glm.vec3(0, -1, 0)
         testcomponent = ecs.component.ModelComponent(gameObject=game_object)
+        collisioncompo = ecs.component.AABBColliderComponent(game_object)
+        collisioncompo.size = glm.vec3(100, 1, 100)
+        game_object.scale = glm.vec3(99, 1, 99)
+        # game_object.scale = collisioncompo.size
+        game_object.addComponent(collisioncompo)
         game_object.addComponent(testcomponent)
         self.scene.add_entity(game_object)
 
         # for x in range(0, 10):
         #     for y in range(0, 10):
         #         for z in range(0, 10):
-        x = 1
-        y = 1
-        z = 1
-        game_object2 = GameObject()
-        game_object2.position = glm.vec3(2 * x, 2 *y , 2 * z)
-        testcomponent2 = ecs.component.ModelComponent(gameObject=game_object2, vao_name='skull', tex_id=1)
-        testcomponent3 = ecs.component.AABBColliderComponent(gameObject=game_object2)
-        game_object2.addComponent(testcomponent3)
-        # game_object2.addComponent(testcomponent2)
+
+        for x in range(0, 5):
+            game_object2 = GameObject()
+            game_object2.position = glm.vec3((20 * x) - 40, -1, 50)
+            game_object2.rotation = glm.vec3(0, 90, 0)
+            
+            testcomponent2 = ecs.component.ModelComponent(gameObject=game_object2, vao_name='wall', tex_id=2)
+            testcomponent3 = ecs.component.AABBColliderComponent(gameObject=game_object2)
+            testcomponent3.size = glm.vec3(2, 20, 20)
+            testcomponent4 = ecs.component.CharacterBody(gameObject=game_object2)
+
+            game_object2.addComponent(testcomponent3)
+            game_object2.addComponent(testcomponent2)
+            self.scene.add_entity(game_object2) 
+        # game_object2.addComponent(testcomponent4)
+
         # game_object2.scale = glm.vec3(0.01, 0.01, 0.01)
-        self.scene.add_entity(game_object2)
 
 #  ---------------
 

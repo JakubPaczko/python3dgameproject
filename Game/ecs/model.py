@@ -32,8 +32,13 @@ class VBO:
     def __init__(self, ctx):
         self.vbos = {}
         self.vbos['cube'] = CubeVbo(ctx)
-        self.vbos['skull'] = SkullVBO(ctx)
+        # self.vbos['skull'] = SkullVBO(ctx)
         self.vbos['cube_wireframe'] = CubeWireframeVBO(ctx)
+        self.vbos['skull'] = LoadVBO(ctx, 'objects/skull/skull.obj')
+        self.vbos['skeleton'] = LoadVBO(ctx, 'objects/skeleton/skeleton.obj')
+        self.vbos['wall'] = LoadVBO(ctx, 'objects/wall/wall.obj')
+
+
 
     def destroy(self):
         [vbo.destroy() for vbo in self.vbos.values()]
@@ -128,7 +133,21 @@ class SkullVBO(BaseVBO):
         self.attrib = ['in_texcoord_0', 'in_normal', 'in_position']
 
     def get_vertex_data(self):
-        objs = pywavefront.Wavefront('objects/skull/skull.obj', cache=True, parse=True)
+        objs = pywavefront.Wavefront('objects/skeleton/skeleton.obj', cache=True, parse=True)
+        obj = objs.materials.popitem()[1]
+        vertex_data = obj.vertices
+        vertex_data = np.array(vertex_data, dtype='f4')
+        return vertex_data
+
+class LoadVBO(BaseVBO):
+    def __init__(self, ctx, path):
+        self.path = path
+        super().__init__(ctx)
+        self.format = '2f 3f 3f'
+        self.attrib = ['in_texcoord_0', 'in_normal', 'in_position']
+
+    def get_vertex_data(self):
+        objs = pywavefront.Wavefront(self.path, cache=True, parse=True)
         obj = objs.materials.popitem()[1]
         vertex_data = obj.vertices
         vertex_data = np.array(vertex_data, dtype='f4')
@@ -154,6 +173,14 @@ class VAO:
             program = self.program.programs['default'],
             vbo = self.vbo.vbos['skull'] )
         
+        self.vaos['skeleton'] = self.get_vao(
+            program = self.program.programs['default'],
+            vbo = self.vbo.vbos['skeleton'] )
+        
+        self.vaos['wall'] = self.get_vao(
+            program = self.program.programs['default'],
+            vbo = self.vbo.vbos['wall'] )
+        
     def get_vao(self, program, vbo):
         vao = self.ctx.vertex_array(program, [(vbo.vbo, vbo.format, *vbo.attrib)])
         return vao
@@ -168,6 +195,10 @@ class Texture:
         self.textures = {}
         self.textures[0] = self.get_texture(path)
         self.textures[1] = self.get_texture('objects/skull/polygon_texture.png')
+        self.textures[2] = self.get_texture('objects/skeleton/skeleton_texture.png')
+        self.textures[2] = self.get_texture('objects/wall/wall_texture.png')
+
+
         # self.textures['skybox'] = self.get_texture_cube()
 
     def get_texture_cube(self, dir_path, ext='png'):
@@ -188,6 +219,7 @@ class Texture:
         texture = pg.transform.flip(texture, flip_x=False, flip_y=True)
         texture = self.ctx.texture(size=texture.get_size(), components=3,
                                    data=pg.image.tostring(texture, 'RGB'))
+        texture.filter = (mgl.NEAREST, mgl.NEAREST)
         return texture
     
     def destroy(self):
