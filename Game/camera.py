@@ -23,8 +23,8 @@ class Camera:
         self.m_proj = self.get_projection_matrix()
 
     def update(self):
-        self.move()
-        self.rotate()
+        # self.move()
+        # self.rotate()
         self.update_cam_vectors()
         self.m_view = self.get_view_matrix()
 

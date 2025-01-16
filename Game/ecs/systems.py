@@ -57,16 +57,25 @@ class RenderSystem(System):
             
             vao.render()
 
-        for entity in self.scene.filter_enitities_by_component(AABBColliderComponent):
-            component : AABBColliderComponent = entity.get_component(AABBColliderComponent)
-            
-            m_model = self.get_model_matrix(entity.get_global_position(), entity.rotation, entity.scale * component.size)
-            vao = self.mesh.vao.vaos['AABB_col']
-            self.update_wireframe_vao(vao, m_model)
-            
-            
-            vao.render(mgl.LINES)
+        if self.scene.app.DEBUG:
+            for entity in self.scene.filter_enitities_by_component(AABBColliderComponent):
+                component : AABBColliderComponent = entity.get_component(AABBColliderComponent)
+                
+                m_model = self.get_model_matrix(entity.get_global_position(), glm.vec3(0, 0, 0), entity.scale * component.size)
+                vao = self.mesh.vao.vaos['AABB_col']
+                self.update_wireframe_vao(vao, m_model)
+                
+                
+                vao.render(mgl.LINES)
         
+        for entity in self.scene.filter_enitities_by_component(CameraComponent):
+            self.camera.position = entity.get_global_position()
+            self.camera.pitch = -entity.get_global_rotation().x
+            self.camera.yaw = -entity.get_global_rotation().y
+            self.camera.roll = -entity.get_global_rotation().z
+
+
+
     def get_vao(self, vao_name, m_model):
         vao = self.mesh.vao.vaos[vao_name]
         
@@ -131,7 +140,7 @@ class CollisionSystem(System):
             if not character_body:
                 continue
             
-            character_body.is_on_floor = True
+            character_body.is_on_floor = False
 
             for entity2 in self.scene.filter_enitities_by_component(AABBColliderComponent):
                 if entity1 == entity2: continue
@@ -143,11 +152,11 @@ class CollisionSystem(System):
                 
                 entity1.position = new_pos
                 character_body.velocity *= ( glm.vec3(1, 1, 1) - collision_normal )
-            
+                
                 if collision_normal == glm.vec3(0, 1, 0):
                     character_body.is_on_floor = True
                     
-                print(character_body.velocity)
+                # print(character_body.velocity)
     
     @staticmethod
     def check_aabb_collision(
@@ -171,11 +180,11 @@ class CollisionSystem(System):
             return pos1, glm.vec3(0, 0, 0)
 
         # Determine the smallest overlap axis and direction
-        if overlap_x < overlap_y and overlap_x < overlap_z:
+        if overlap_x <= overlap_y and overlap_x <= overlap_z:
             # X-axis collision resolution
             displacement = glm.vec3(-overlap_x if pos1.x < pos2.x else overlap_x, 0, 0)
             collision_normal = glm.vec3(1, 0, 0)
-        elif overlap_y < overlap_x and overlap_y < overlap_z:
+        elif overlap_y <= overlap_x and overlap_y <= overlap_z:
             # Y-axis collision resolution
             displacement = glm.vec3(0, -overlap_y if pos1.y < pos2.y else overlap_y, 0)
             collision_normal = glm.vec3(0, 1, 0)
@@ -193,7 +202,8 @@ class PhysicsSystem(System):
         for entity1 in self.scene.filter_enitities_by_component(CharacterBody):
             component : CharacterBody = entity1.get_component(CharacterBody)
             entity1.position += component.velocity
-            component.velocity.y -= component.gravity * self.scene.app.delta_time * 0.0005
+            if not component.is_on_floor:
+                component.velocity.y -= component.gravity * self.scene.app.delta_time * 0.0001
 
 class ScriptSystem(System):
     def update(self):

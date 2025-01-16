@@ -16,6 +16,8 @@ class Engine:
         #set window size
         self.WIN_SIZE = win_size
         self.RESOLUTION = resolution
+        self.DEBUG = True
+
 
         pg.display.gl_set_attribute(pg.GL_CONTEXT_MAJOR_VERSION, 3)
         pg.display.gl_set_attribute(pg.GL_CONTEXT_MINOR_VERSION, 3)
@@ -38,11 +40,11 @@ class Engine:
 
 # -- test scene
         self.scene = Scene(self)
-        system = ecs.systems.RenderSystem(scene=self.scene)
-        self.scene.add_system(system)
         self.scene.add_system(ecs.systems.PhysicsSystem(self.scene))
         self.scene.add_system(ecs.systems.CollisionSystem(self.scene))
         self.scene.add_system(ecs.systems.ScriptSystem(self.scene))
+        system = ecs.systems.RenderSystem(scene=self.scene)
+        self.scene.add_system(system)
 
 
 
@@ -59,16 +61,19 @@ class Engine:
         self.scene.add_entity(game_object)
 
         game_object = GameObject()
-        testcomponent = ecs.component.ModelComponent()
-        collisioncompo = ecs.component.AABBColliderComponent()
-        dupa3 = ecs.component.CharacterBody()
-        game_object.addComponent(testcomponent)
-        game_object.addComponent(collisioncompo)
-        game_object.addComponent(dupa3)
+        game_object.addComponent(ecs.component.ModelComponent())
+        game_object.addComponent(ecs.component.AABBColliderComponent())
+        game_object.addComponent(ecs.component.CharacterBody())
         game_object.addComponent(Player())
         game_object.position = glm.vec3(0, 5, 1)
         print(game_object.has_component(ecs.component.ScriptComponent))
         self.scene.add_entity(game_object)
+        camera = GameObject()
+        camera.addComponent(ecs.component.CameraComponent())
+        camera.position = glm.vec3(0, 1.8, 0)
+        self.scene.add_entity(camera)
+        game_object.add_child(camera)
+        
 
         # for x in range(0, 10):
         #     for y in range(0, 10):
@@ -81,7 +86,7 @@ class Engine:
             
             testcomponent2 = ecs.component.ModelComponent(vao_name='wall', tex_id=2)
             testcomponent3 = ecs.component.AABBColliderComponent()
-            testcomponent3.size = glm.vec3(2, 20, 20)
+            testcomponent3.size = glm.vec3(20, 20, 2)
             testcomponent4 = ecs.component.CharacterBody()
 
             game_object2.addComponent(testcomponent3)
@@ -96,7 +101,6 @@ class Engine:
     def check_events(self):
         for event in pg.event.get():
             if event.type == pg.QUIT or(event.type == pg.KEYDOWN and event.key == pg.K_ESCAPE):
-                self.mesh.destroy()
                 pg.quit()
                 sys.exit()
     

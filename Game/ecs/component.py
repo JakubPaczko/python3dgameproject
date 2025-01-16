@@ -51,3 +51,7 @@ class ModelComponent(Component):
         self.vao_name = vao_name
         self.vao = None
         self.tex_id = tex_id
+
+class CameraComponent(Component):
+    def __init__(self):
+        super().__init__()
