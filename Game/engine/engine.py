@@ -5,6 +5,8 @@ from ecs.model import *
 from ecs.gameObject import GameObject
 import ecs.systems 
 import ecs.component
+from Scripts.player import Player
+
 from ecs.scene import Scene
 
 class Engine:
@@ -38,20 +40,34 @@ class Engine:
         self.scene = Scene(self)
         system = ecs.systems.RenderSystem(scene=self.scene)
         self.scene.add_system(system)
-        self.scene.add_system(ecs.systems.CollisionSystem(self.scene))
         self.scene.add_system(ecs.systems.PhysicsSystem(self.scene))
+        self.scene.add_system(ecs.systems.CollisionSystem(self.scene))
+        self.scene.add_system(ecs.systems.ScriptSystem(self.scene))
+
 
 
 
         game_object = GameObject()
         game_object.position = glm.vec3(0, -1, 0)
-        testcomponent = ecs.component.ModelComponent(gameObject=game_object)
-        collisioncompo = ecs.component.AABBColliderComponent(game_object)
+        testcomponent = ecs.component.ModelComponent()
+        collisioncompo = ecs.component.AABBColliderComponent()
         collisioncompo.size = glm.vec3(100, 1, 100)
         game_object.scale = glm.vec3(99, 1, 99)
         # game_object.scale = collisioncompo.size
         game_object.addComponent(collisioncompo)
         game_object.addComponent(testcomponent)
+        self.scene.add_entity(game_object)
+
+        game_object = GameObject()
+        testcomponent = ecs.component.ModelComponent()
+        collisioncompo = ecs.component.AABBColliderComponent()
+        dupa3 = ecs.component.CharacterBody()
+        game_object.addComponent(testcomponent)
+        game_object.addComponent(collisioncompo)
+        game_object.addComponent(dupa3)
+        game_object.addComponent(Player())
+        game_object.position = glm.vec3(0, 5, 1)
+        print(game_object.has_component(ecs.component.ScriptComponent))
         self.scene.add_entity(game_object)
 
         # for x in range(0, 10):
@@ -63,10 +79,10 @@ class Engine:
             game_object2.position = glm.vec3((20 * x) - 40, -1, 50)
             game_object2.rotation = glm.vec3(0, 90, 0)
             
-            testcomponent2 = ecs.component.ModelComponent(gameObject=game_object2, vao_name='wall', tex_id=2)
-            testcomponent3 = ecs.component.AABBColliderComponent(gameObject=game_object2)
+            testcomponent2 = ecs.component.ModelComponent(vao_name='wall', tex_id=2)
+            testcomponent3 = ecs.component.AABBColliderComponent()
             testcomponent3.size = glm.vec3(2, 20, 20)
-            testcomponent4 = ecs.component.CharacterBody(gameObject=game_object2)
+            testcomponent4 = ecs.component.CharacterBody()
 
             game_object2.addComponent(testcomponent3)
             game_object2.addComponent(testcomponent2)

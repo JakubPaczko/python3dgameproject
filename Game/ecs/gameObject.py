@@ -6,10 +6,10 @@ class GameObject:
         self.position = glm.vec3(0, 0, 0)
         self.rotation = glm.vec3(0, 0, 0)
         self.scale = glm.vec3(1, 1, 1)
+
         self.parent = None
         self.children = []
         self.components : list["Component"] = []
-
         self.scene = scene
 
     def get_global_position(self) -> glm.vec3:
@@ -29,20 +29,21 @@ class GameObject:
     
     def get_component(self, component_type):
         for component in self.components:
-            if type(component) is component_type:
+            if isinstance(component, component_type):
                 return component
         return None
         
-    def addComponent(self, component):
+    def addComponent(self, component) -> None:
         self.components.append(component)
+        component.owner = self
 
-    def has_component(self, component_type):
+    def has_component(self, component_type) -> bool:
         for component in self.components:
-            if type(component) is component_type:
+            if isinstance(component, component_type):
                 return True
         return False
     
-    def has_components(self, component_types):
+    def has_components(self, component_types) -> bool:
         for component in self.components:
             if not type(component) in component_types:
                 return False

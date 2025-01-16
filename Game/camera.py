@@ -49,6 +49,9 @@ class Camera:
         velocity = SPEED * self.app.delta_time
         keys = pg.key.get_pressed()
 
+        if keys[pg.K_LSHIFT]:
+            velocity *= 10
+
         if keys[pg.K_w]:
             self.position += self.forward * velocity
         if keys[pg.K_s]:

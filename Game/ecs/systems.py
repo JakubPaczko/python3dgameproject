@@ -125,18 +125,29 @@ class CollisionSystem(System):
     
     def update(self):
         for entity1 in self.scene.filter_enitities_by_component(AABBColliderComponent):
-            component1 : AABBColliderComponent = entity1.get_component(AABBColliderComponent)
+            component1 = entity1.get_component(AABBColliderComponent)
             character_body = entity1.get_component(CharacterBody)
             
             if not character_body:
                 continue
+            
+            character_body.is_on_floor = True
 
             for entity2 in self.scene.filter_enitities_by_component(AABBColliderComponent):
                 if entity1 == entity2: continue
-                component2 : AABBColliderComponent = entity2.get_component(AABBColliderComponent)
+                component2 = entity2.get_component(AABBColliderComponent)
                 
-                pos = self.check_aabb_collision(entity1.position, component1.size, entity2.position, component2.size)
-                entity1.position = pos
+                collision_data = self.check_aabb_collision(entity1.position, component1.size, entity2.position, component2.size)
+                new_pos = collision_data[0]
+                collision_normal = collision_data[1]
+                
+                entity1.position = new_pos
+                character_body.velocity *= ( glm.vec3(1, 1, 1) - collision_normal )
+            
+                if collision_normal == glm.vec3(0, 1, 0):
+                    character_body.is_on_floor = True
+                    
+                print(character_body.velocity)
     
     @staticmethod
     def check_aabb_collision(
@@ -157,27 +168,35 @@ class CollisionSystem(System):
 
         # If there is no overlap on any axis, return the original position
         if overlap_x <= 0 or overlap_y <= 0 or overlap_z <= 0:
-            return pos1
+            return pos1, glm.vec3(0, 0, 0)
 
         # Determine the smallest overlap axis and direction
         if overlap_x < overlap_y and overlap_x < overlap_z:
             # X-axis collision resolution
             displacement = glm.vec3(-overlap_x if pos1.x < pos2.x else overlap_x, 0, 0)
+            collision_normal = glm.vec3(1, 0, 0)
         elif overlap_y < overlap_x and overlap_y < overlap_z:
             # Y-axis collision resolution
             displacement = glm.vec3(0, -overlap_y if pos1.y < pos2.y else overlap_y, 0)
+            collision_normal = glm.vec3(0, 1, 0)
         else:
             # Z-axis collision resolution
             displacement = glm.vec3(0, 0, -overlap_z if pos1.z < pos2.z else overlap_z)
+            collision_normal = glm.vec3(0, 0, 1)
 
         # Adjust position of the first AABB to resolve collision
-        new_pos1 = pos1 + displacement
-
-        return new_pos1
+        new_pos = pos1 + displacement
+        return new_pos, collision_normal
     
 class PhysicsSystem(System):
     def update(self):
         for entity1 in self.scene.filter_enitities_by_component(CharacterBody):
             component : CharacterBody = entity1.get_component(CharacterBody)
             entity1.position += component.velocity
-            component.velocity.y = -0.01
+            component.velocity.y -= component.gravity * self.scene.app.delta_time * 0.0005
+
+class ScriptSystem(System):
+    def update(self):
+        for entity in self.scene.filter_enitities_by_component(ScriptComponent):
+            script = entity.get_component(ScriptComponent)
+            script.update()
