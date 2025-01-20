@@ -39,6 +39,17 @@ class RenderSystem(System):
     
     def update(self):
         # self.ctx.clear(0.1, 0.1, 0.1)
+
+        
+        for entity in self.scene.filter_enitities_by_component(CameraComponent):
+            self.camera.position = entity.get_global_position()
+            # self.camera.pitch = -entity.get_global_rotation().x
+            # self.camera.yaw = -entity.get_global_rotation().y
+            # self.camera.roll = -entity.get_global_rotation().z
+            self.camera.test(entity.get_global_rotation())
+            print(entity.get_global_rotation())
+            # print(glm.vec3(self.camera.pitch, self.camera.yaw, self.camera.roll))
+
         self.camera.update()
         self.light.position = self.camera.position
 
@@ -47,8 +58,8 @@ class RenderSystem(System):
             
             texture = self.mesh.texture.textures[component.tex_id]
             texture.use()
-            m_model = self.get_model_matrix(entity.get_global_position(), entity.rotation, entity.scale)
-
+            # m_model = self.get_model_matrix(entity.get_global_position(), entity.get_global_rotation(), entity.get_global_scale())
+            m_model = entity.get_world_transform()
             vao = self.mesh.vao.vaos[component.vao_name]
             self.update_vao(vao, m_model)
             # vao = self.get_vao(component.vao_name, m_model)
@@ -62,17 +73,14 @@ class RenderSystem(System):
                 component : AABBColliderComponent = entity.get_component(AABBColliderComponent)
                 
                 m_model = self.get_model_matrix(entity.get_global_position(), glm.vec3(0, 0, 0), entity.scale * component.size)
+                # m_model = entity.get_world_transform()
                 vao = self.mesh.vao.vaos['AABB_col']
                 self.update_wireframe_vao(vao, m_model)
                 
                 
                 vao.render(mgl.LINES)
         
-        for entity in self.scene.filter_enitities_by_component(CameraComponent):
-            self.camera.position = entity.get_global_position()
-            self.camera.pitch = -entity.get_global_rotation().x
-            self.camera.yaw = -entity.get_global_rotation().y
-            self.camera.roll = -entity.get_global_rotation().z
+
 
 
 

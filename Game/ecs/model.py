@@ -36,6 +36,8 @@ class VBO:
         self.vbos['skull'] = LoadVBO(ctx, 'objects/skull/skull.obj')
         self.vbos['skeleton'] = LoadVBO(ctx, 'objects/skeleton/skeleton.obj')
         self.vbos['wall'] = LoadVBO(ctx, 'objects/wall/wall.obj')
+        self.vbos['sword'] = LoadVBO(ctx, 'objects/weapons/long_sword.obj')
+
 
 
 
@@ -180,6 +182,10 @@ class VAO:
             program = self.program.programs['default'],
             vbo = self.vbo.vbos['wall'] )
         
+        self.vaos['sword'] = self.get_vao(
+            program = self.program.programs['default'],
+            vbo = self.vbo.vbos['sword'] )
+        
     def get_vao(self, program, vbo):
         vao = self.ctx.vertex_array(program, [(vbo.vbo, vbo.format, *vbo.attrib)])
         return vao
@@ -194,8 +200,10 @@ class Texture:
         self.textures = {}
         self.textures[0] = self.get_texture(path)
         self.textures[1] = self.get_texture('objects/skull/polygon_texture.png')
-        self.textures[2] = self.get_texture('objects/skeleton/skeleton_texture.png')
         self.textures[2] = self.get_texture('objects/wall/wall_texture.png')
+        self.textures[3] = self.get_texture('objects/skeleton/skeleton_texture.png')
+        self.textures[4] = self.get_texture('objects/weapons/long_sword_texture.png')
+
 
 
         # self.textures['skybox'] = self.get_texture_cube()

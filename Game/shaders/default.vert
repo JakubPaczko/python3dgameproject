@@ -49,5 +49,6 @@ void main(){
     vec4 pos = m_proj * m_view * m_model * vec4(in_position, 1.0);
     // vec3 new_pos = vec3(pox.x/pos.w, pos.y/pos.w, pos.z/pos.w)
     // gl_Position = vec4(pos.x * p_Issue, pos.y * p_Issue, pos.z * p_Issue, pos.w);
-    gl_Position = snap(pos, vec2(320/2, 200/2));
+    gl_Position = pos;
+    // gl_Position = snap(pos, vec2(320/2, 200/2));
 }

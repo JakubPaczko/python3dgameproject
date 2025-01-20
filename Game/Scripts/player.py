@@ -8,6 +8,7 @@ class Player(ScriptComponent):
         super().__init__()
         self.SENSITIVITY = 0.1
         self.JUMP_FORCE = 0.05
+        self.SPEED = 0.1
         self.camera = None
         self.character_body : CharacterBody = None
 
@@ -18,27 +19,29 @@ class Player(ScriptComponent):
 
     def move(self):
         keys = pg.key.get_pressed()
-        velocity = 0.1
 
         if not self.character_body: return
         # rotation = glm.vec3(self.camera.rotation.x, self.owner.rotation.x, 0)
         # print(self.owner.rotation)
-        vectors = self.calculate_vectors(-self.owner.rotation.y)
+        forward, right = self.calculate_vectors(-self.owner.rotation.y)
         input_vector = glm.vec3(0, 0, 0)
         if keys[pg.K_w]:
-            input_vector += vectors[0]
+            input_vector += forward
         if keys[pg.K_s]:
-            input_vector -= vectors[0]
+            input_vector -= forward
         if keys[pg.K_a]:
-            input_vector -= vectors[1]
+            input_vector -= right
         if keys[pg.K_d]:
-            input_vector += vectors[1]
+            input_vector += right
 
-        input_vector = input_vector * velocity
+        glm.normalize(input_vector)
+        input_vector *= self.SPEED
         self.character_body.velocity = glm.vec3(input_vector.x, self.character_body.velocity.y, input_vector.z)
         
 
     def rotate(self):
+
+
         if not self.camera:
             for child in self.owner.children:
                 if child.has_component(CameraComponent):

@@ -25,9 +25,26 @@ class Camera:
     def update(self):
         # self.move()
         # self.rotate()
-        self.update_cam_vectors()
+        # self.update_cam_vectors()
         self.m_view = self.get_view_matrix()
 
+    def test(self, quaternion):
+        rotation_matrix = glm.mat3_cast(quaternion)
+        
+        # Extract the basis vectors
+        right = glm.vec3(rotation_matrix[0][0], rotation_matrix[1][0], rotation_matrix[2][0])  # X-axis
+        up = glm.vec3(rotation_matrix[0][1], rotation_matrix[1][1], rotation_matrix[2][1])     # Y-axis
+        forward = glm.vec3(rotation_matrix[0][2], rotation_matrix[1][2], rotation_matrix[2][2]) # Z-axis
+        self.right = right
+        self.up = up
+        self.forward = forward
+        # print(quaternion)
+        # print(forward)
+        # print(up)
+        # print(right)
+
+        # return forward, right, up
+    
     def rotate(self):
         rel_x, rel_y = pg.mouse.get_rel()
         self.yaw += rel_x * SENSIVITY
