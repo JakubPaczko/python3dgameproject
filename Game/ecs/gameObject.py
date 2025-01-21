@@ -59,7 +59,7 @@ class GameObject:
 
         mat = self.get_world_transform()
         quat = glm.quat_cast(mat)
-        return glm.quat(x=glm.degrees(quat.x), y=glm.degrees(quat.y), z=glm.degrees(quat.z))
+        return glm.quat(x=glm.degrees(quat.x), y=glm.degrees(quat.y), z=glm.degrees(quat.z), w=glm.degrees(quat.w))
 
 
     def get_component(self, component_type):

@@ -65,7 +65,7 @@ class Engine:
         game_object.addComponent(AABBColliderComponent())
         game_object.addComponent(CharacterBody())
         game_object.addComponent(Player())
-        game_object.position = glm.vec3(0, 5, 1)
+        game_object.position = glm.vec3(1, 5, 0)
         print(game_object.has_component(ScriptComponent))
         self.scene.add_entity(game_object)
         camera = GameObject()
@@ -76,7 +76,9 @@ class Engine:
 
         sword = GameObject()
         sword.addComponent(ModelComponent(vao_name='sword'))
-        sword.position = glm.vec3(1, 1, 1)
+        sword.position = glm.vec3(-1, -1, 1.5)
+        sword.rotation.y = 90
+        sword.scale = glm.vec3(0.3, 0.3, 0.3)
         camera.add_child(sword)
         self.scene.add_entity(sword)
         

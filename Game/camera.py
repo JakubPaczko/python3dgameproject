@@ -1,7 +1,7 @@
 import glm
 import pygame as pg
 
-FOV = 50
+FOV = 80
 NEAR = 0.5
 FAR = 200
 SPEED = 0.01
@@ -22,28 +22,24 @@ class Camera:
         self.m_view = self.get_view_matrix()
         self.m_proj = self.get_projection_matrix()
 
-    def update(self):
-        # self.move()
-        # self.rotate()
-        # self.update_cam_vectors()
-        self.m_view = self.get_view_matrix()
 
     def test(self, quaternion):
-        rotation_matrix = glm.mat3_cast(quaternion)
         
-        # Extract the basis vectors
-        right = glm.vec3(rotation_matrix[0][0], rotation_matrix[1][0], rotation_matrix[2][0])  # X-axis
-        up = glm.vec3(rotation_matrix[0][1], rotation_matrix[1][1], rotation_matrix[2][1])     # Y-axis
-        forward = glm.vec3(rotation_matrix[0][2], rotation_matrix[1][2], rotation_matrix[2][2]) # Z-axis
-        self.right = right
-        self.up = up
-        self.forward = forward
-        # print(quaternion)
-        # print(forward)
-        # print(up)
-        # print(right)
-
-        # return forward, right, up
+        q = glm.normalize(quaternion)
+    
+        # Extract the front, left, and up vectors using the rotation matrix
+        self.forward = glm.vec3(2 * (q.x * q.z + q.w * q.y),
+                        2 * (q.y * q.z - q.w * q.x),
+                        1 - 2 * (q.x * q.x + q.y * q.y))
+        
+        self.up = glm.vec3(2 * (q.x * q.y - q.w * q.z),
+                    1 - 2 * (q.x * q.x + q.z * q.z),
+                    2 * (q.y * q.z + q.w * q.x))
+        
+        self.right = -glm.vec3(1 - 2 * (q.y * q.y + q.z * q.z),
+                        2 * (q.x * q.y + q.w * q.z),
+                        2 * (q.x * q.z - q.w * q.y))
+        self.m_view = self.get_view_matrix()
     
     def rotate(self):
         rel_x, rel_y = pg.mouse.get_rel()

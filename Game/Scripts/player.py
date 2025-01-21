@@ -23,7 +23,7 @@ class Player(ScriptComponent):
         if not self.character_body: return
         # rotation = glm.vec3(self.camera.rotation.x, self.owner.rotation.x, 0)
         # print(self.owner.rotation)
-        forward, right = self.calculate_vectors(-self.owner.rotation.y)
+        forward, right = self.calculate_vectors(self.owner.rotation.y)
         input_vector = glm.vec3(0, 0, 0)
         if keys[pg.K_w]:
             input_vector += forward
@@ -41,7 +41,7 @@ class Player(ScriptComponent):
 
     def rotate(self):
 
-
+        # self.owner.rotation.y += 0.1
         if not self.camera:
             for child in self.owner.children:
                 if child.has_component(CameraComponent):
@@ -51,7 +51,8 @@ class Player(ScriptComponent):
         self.owner.rotation.y -= rel_x * self.SENSITIVITY
         self.camera.rotation.x += rel_y * self.SENSITIVITY
         self.camera.rotation.x = max(-90, min(90, self.camera.rotation.x))
-    
+        print(self.camera.get_global_rotation())
+
     def jump(self):
         if not self.character_body:
             self.character_body = self.owner.get_component(CharacterBody)
@@ -68,7 +69,7 @@ class Player(ScriptComponent):
     def calculate_vectors(y_angle):
         y_angle = glm.radians(y_angle) 
 
-        forward_vector = glm.vec3(glm.cos(y_angle), 0, glm.sin(y_angle))
+        forward_vector = glm.vec3(glm.sin(y_angle), 0, glm.cos(y_angle))
 
         right = glm.normalize(glm.cross(forward_vector, glm.vec3(0, 1, 0)))
 

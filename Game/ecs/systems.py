@@ -35,22 +35,27 @@ class RenderSystem(System):
         self.camera = Camera(scene.app)
         self.app = scene.app
         self.light = Light()
+        self.FREE_CAM = False
 
     
     def update(self):
         # self.ctx.clear(0.1, 0.1, 0.1)
 
-        
-        for entity in self.scene.filter_enitities_by_component(CameraComponent):
-            self.camera.position = entity.get_global_position()
-            # self.camera.pitch = -entity.get_global_rotation().x
-            # self.camera.yaw = -entity.get_global_rotation().y
-            # self.camera.roll = -entity.get_global_rotation().z
-            self.camera.test(entity.get_global_rotation())
-            print(entity.get_global_rotation())
-            # print(glm.vec3(self.camera.pitch, self.camera.yaw, self.camera.roll))
+        if not self.FREE_CAM:
+            for entity in self.scene.filter_enitities_by_component(CameraComponent):
+                self.camera.position = entity.get_global_position()
+                rotation = entity.get_global_rotation()
+                # self.camera.m_view = entity.get_world_transform()
+                # self.camera.pitch = -rotation.x
+                # self.camera.yaw = -rotation.y
+                # self.camera.roll = -rotation.z
+                self.camera.test(rotation)
+                # print(entity.get_global_rotation())
+                # print(glm.vec3(self.camera.pitch, self.camera.yaw, self.camera.roll))
+        else:
+            self.camera.move()
+            self.camera.rotate()
 
-        self.camera.update()
         self.light.position = self.camera.position
 
         for entity in self.scene.filter_enitities_by_component(ModelComponent):
