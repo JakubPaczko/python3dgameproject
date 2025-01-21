@@ -13,10 +13,6 @@ class GameObject:
         self.scene = scene
 
     def get_local_transform(self):
-        """
-        Compute the local transformation matrix of an entity.
-        Combines position, rotation (as vec3), and scale into a single matrix.
-        """
         m_model = glm.mat4()
         
         m_model = glm.translate(m_model, self.position)
@@ -24,9 +20,8 @@ class GameObject:
         m_model = glm.rotate(m_model, glm.radians(self.rotation.x), glm.vec3(1, 0, 0))
         m_model = glm.rotate(m_model, glm.radians(self.rotation.y), glm.vec3(0, 1, 0))
         m_model = glm.rotate(m_model, glm.radians(self.rotation.z), glm.vec3(0, 0, 1))
-        
-        # m_model = glm.rotate(m_model, glm.radians(self.rotation))
         m_model = glm.scale(m_model, self.scale)
+        # m_model = glm.rotate(m_model, glm.radians(self.rotation))
     
         return m_model
     

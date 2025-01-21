@@ -43,6 +43,8 @@ class Engine:
         self.scene.add_system(ecs.systems.PhysicsSystem(self.scene))
         self.scene.add_system(ecs.systems.CollisionSystem(self.scene))
         self.scene.add_system(ecs.systems.ScriptSystem(self.scene))
+        self.scene.add_system(ecs.systems.AnimationSystem(self.scene))
+
         system = ecs.systems.RenderSystem(scene=self.scene)
         self.scene.add_system(system)
 
@@ -76,6 +78,17 @@ class Engine:
 
         sword = GameObject()
         sword.addComponent(ModelComponent(vao_name='sword'))
+        sword_animation : AnimationComponent = AnimationComponent()
+
+        sword_animation.add_keyframe('idle', glm.vec3(-1, -1, 1.5), glm.quat(0, 0, 90, 0), glm.vec3(0.3, 0.3, 0.3), 0)
+        sword_animation.add_keyframe('idle', glm.vec3(-1, 0, 1.5), glm.quat(0, 90, 90, 0), glm.vec3(0.3, 0.3, 0.3), 60)
+        sword_animation.add_keyframe('idle', glm.vec3(-1, -1, 1.5), glm.quat(0, 0, 90, 0), glm.vec3(0.3, 0.3, 0.3), 120)
+        sword_animation.current_animation = 'idle'
+        sword_animation.paused = False
+
+        # sword_animation.animations['idle'] = { 1 : {} }
+        sword.addComponent(sword_animation)
+
         sword.position = glm.vec3(-1, -1, 1.5)
         sword.rotation.y = 90
         sword.scale = glm.vec3(0.3, 0.3, 0.3)
@@ -90,7 +103,7 @@ class Engine:
         for x in range(0, 5):
             game_object2 = GameObject()
             game_object2.position = glm.vec3((20 * x) - 40, -1, 50)
-            game_object2.rotation = glm.quat(0, 90, 0, 0)
+            game_object2.rotation = glm.quat(0, 0, 90, 0)
             
             testcomponent2 = ModelComponent(vao_name='wall', tex_id=2)
             testcomponent3 = AABBColliderComponent()

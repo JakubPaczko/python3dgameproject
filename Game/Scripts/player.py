@@ -11,6 +11,7 @@ class Player(ScriptComponent):
         self.SPEED = 0.1
         self.camera = None
         self.character_body : CharacterBody = None
+        self.sword_animator : AnimationComponent = None
 
     def update(self):
         self.rotate()
@@ -51,7 +52,7 @@ class Player(ScriptComponent):
         self.owner.rotation.y -= rel_x * self.SENSITIVITY
         self.camera.rotation.x += rel_y * self.SENSITIVITY
         self.camera.rotation.x = max(-90, min(90, self.camera.rotation.x))
-        print(self.camera.get_global_rotation())
+        # print(self.camera.get_global_rotation())
 
     def jump(self):
         if not self.character_body:

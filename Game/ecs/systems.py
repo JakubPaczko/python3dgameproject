@@ -45,13 +45,7 @@ class RenderSystem(System):
             for entity in self.scene.filter_enitities_by_component(CameraComponent):
                 self.camera.position = entity.get_global_position()
                 rotation = entity.get_global_rotation()
-                # self.camera.m_view = entity.get_world_transform()
-                # self.camera.pitch = -rotation.x
-                # self.camera.yaw = -rotation.y
-                # self.camera.roll = -rotation.z
                 self.camera.test(rotation)
-                # print(entity.get_global_rotation())
-                # print(glm.vec3(self.camera.pitch, self.camera.yaw, self.camera.roll))
         else:
             self.camera.move()
             self.camera.rotate()
@@ -63,12 +57,10 @@ class RenderSystem(System):
             
             texture = self.mesh.texture.textures[component.tex_id]
             texture.use()
-            # m_model = self.get_model_matrix(entity.get_global_position(), entity.get_global_rotation(), entity.get_global_scale())
+
             m_model = entity.get_world_transform()
             vao = self.mesh.vao.vaos[component.vao_name]
             self.update_vao(vao, m_model)
-            # vao = self.get_vao(component.vao_name, m_model)
-            # self.update_vao(component.vao, m_model)
             
             
             vao.render()
@@ -223,3 +215,40 @@ class ScriptSystem(System):
         for entity in self.scene.filter_enitities_by_component(ScriptComponent):
             script = entity.get_component(ScriptComponent)
             script.update()
+
+class AnimationSystem(System):
+    def __init__(self, scene):
+        super().__init__(scene)
+
+    def update(self):
+        for entity in self.scene.filter_enitities_by_component(AnimationComponent):
+            animation_component : AnimationComponent = entity.get_component(AnimationComponent)
+
+            anim_name = animation_component.current_animation
+
+            if anim_name == '' or animation_component.paused:
+                continue
+
+            animation = animation_component.animations[anim_name]
+            keyframe = animation_component.keyframe
+
+            if len(animation) - 1 <= keyframe:
+                animation_component.paused = True
+                animation_component.current_animation = ''
+                continue
+
+            animation_component.animation_time += 0.01
+
+            position = glm.lerp(animation[keyframe].position, animation[keyframe + 1].position, animation_component.animation_time)
+            rotation = glm.lerp(animation[keyframe].rotation, animation[keyframe + 1].rotation, animation_component.animation_time)
+            scale = glm.lerp(animation[keyframe].scale, animation[keyframe + 1].scale, animation_component.animation_time)
+            
+
+            if animation_component.animation_time >= 1:
+                animation_component.keyframe += 1
+                animation_component.animation_time = 0
+
+            entity.position = position
+            entity.rotation = rotation
+            entity.scale = scale
+

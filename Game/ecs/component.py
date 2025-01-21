@@ -55,3 +55,31 @@ class ModelComponent(Component):
 class CameraComponent(Component):
     def __init__(self):
         super().__init__()
+
+class AnimationComponent(Component):
+    class KeyFrame:
+        def __init__(self, position, rotation, scale, time):
+            self.position = position
+            self.rotation = rotation
+            self.scale = scale
+            self.time = time
+
+    def __init__(self):
+        super().__init__()
+        self.animations = {}
+        self.current_animation = ''
+        self.animation_time = 0.0
+        self.keyframe = 0
+        self.animated_object = None
+        self.paused = True
+    
+    def add_keyframe(self, animation_name, position, rotation, scale, time):
+        if not animation_name in self.animations.keys():
+            self.animations[animation_name] = []
+        
+        
+        keyframe = self.KeyFrame(position, rotation, scale, time)
+
+        self.animations[animation_name].append(keyframe)
+        
+
