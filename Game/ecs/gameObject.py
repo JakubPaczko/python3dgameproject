@@ -12,6 +12,11 @@ class GameObject:
         self.components : list["Component"] = []
         self.scene = scene
 
+    def enter_scene(self):
+        for component in self.components:
+            if isinstance(component, ScriptComponent):
+                component.start()
+
     def get_local_transform(self):
         m_model = glm.mat4()
         
@@ -75,6 +80,12 @@ class GameObject:
     def has_component(self, component_type) -> bool:
         for component in self.components:
             if isinstance(component, component_type):
+                return True
+        return False
+
+    def has_specific_component(self, component_type) -> bool:
+        for component in self.components:
+            if type(component) == component_type:
                 return True
         return False
     

@@ -1,10 +1,8 @@
-
-from ecs.gameObject import GameObject
 import glm
 
 class Component:
     def __init__(self):
-        self.owner : GameObject = None
+        self.owner = None
         pass
 
 class CameraComponent(Component):
@@ -33,10 +31,14 @@ class ScriptComponent(Component):
         pass
     
 class AABBColliderComponent(Component):
-    def __init__(self, size : glm.vec3 = glm.vec3(1, 1, 1)):
+    def __init__(self, size = glm.vec3(1, 1, 1)):
         super().__init__()
         self.size  : glm.vec3 = size
-        self.is_trigger = False
+
+class AABBTriggerArea(AABBColliderComponent):
+    def __init__(self, size=glm.vec3(1, 1, 1)):
+        super().__init__(size)
+        self.overlaping_colliders = []
 
 class CharacterBody(Component):
     def __init__(self):
@@ -75,11 +77,11 @@ class AnimationComponent(Component):
     
     def add_keyframe(self, animation_name, position, rotation, scale, time):
         if not animation_name in self.animations.keys():
-            self.animations[animation_name] = []
+            self.animations[animation_name] = {'loop' : True, 'keyframes' : []}
         
         
         keyframe = self.KeyFrame(position, rotation, scale, time)
 
-        self.animations[animation_name].append(keyframe)
+        self.animations[animation_name]['keyframes'].append(keyframe)
         
 

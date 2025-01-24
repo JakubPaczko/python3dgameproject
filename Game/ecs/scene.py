@@ -21,6 +21,7 @@ class Scene:
     
     def add_entity(self, gameObject : GameObject):
         gameObject.scene = self
+        gameObject.enter_scene()
         self.gameObjects[self.last_added_id] = gameObject
         self.last_added_id += 1
     
@@ -29,6 +30,15 @@ class Scene:
 
         for gameObject in self.gameObjects.values():
             if gameObject.has_component(component_type):
+                out.append(gameObject)
+        
+        return out
+    
+    def filter_enitities_by_specific_component(self, component_type) -> List[GameObject]:
+        out : List[GameObject] = []
+
+        for gameObject in self.gameObjects.values():
+            if gameObject.has_specific_component(component_type):
                 out.append(gameObject)
         
         return out

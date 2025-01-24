@@ -138,7 +138,11 @@ class CollisionSystem(System):
         super().__init__(scene)
     
     def update(self):
-        for entity1 in self.scene.filter_enitities_by_component(AABBColliderComponent):
+        self.handle_collision()
+        self.handle_trigger_collision()
+                    
+    def handle_collision(self):
+        for entity1 in self.scene.filter_enitities_by_specific_component(AABBColliderComponent):
             component1 = entity1.get_component(AABBColliderComponent)
             character_body = entity1.get_component(CharacterBody)
             
@@ -147,11 +151,11 @@ class CollisionSystem(System):
             
             character_body.is_on_floor = False
 
-            for entity2 in self.scene.filter_enitities_by_component(AABBColliderComponent):
+            for entity2 in self.scene.filter_enitities_by_specific_component(AABBColliderComponent):
                 if entity1 == entity2: continue
                 component2 = entity2.get_component(AABBColliderComponent)
                 
-                collision_data = self.check_aabb_collision(entity1.position, component1.size, entity2.position, component2.size)
+                collision_data = self.check_aabb_collision(entity1.get_global_position(), component1.size, entity2.get_global_position(), component2.size)
                 new_pos = collision_data[0]
                 collision_normal = collision_data[1]
                 
@@ -160,8 +164,44 @@ class CollisionSystem(System):
                 
                 if collision_normal == glm.vec3(0, 1, 0):
                     character_body.is_on_floor = True
-                    
-                # print(character_body.velocity)
+    
+    def handle_trigger_collision(self):
+        for entity1 in self.scene.filter_enitities_by_specific_component(AABBTriggerArea):
+            component1 : AABBTriggerArea = entity1.get_component(AABBTriggerArea)
+            component1.overlaping_colliders = []
+
+            for entity2 in self.scene.filter_enitities_by_specific_component(AABBTriggerArea):
+                component2 : AABBTriggerArea = entity2.get_component(AABBTriggerArea)
+                
+                if component1 == component2: continue
+
+                is_overlaping = self.is_overlaping(entity1.get_global_position(), component1.size, entity2.get_global_position(), component2.size)
+
+                if is_overlaping:
+                    component1.overlaping_colliders.append(component2)
+
+    @staticmethod
+    def is_overlaping(
+        pos1: glm.vec3, size1: glm.vec3,
+        pos2: glm.vec3, size2: glm.vec3
+    ) -> bool:
+    
+        # Calculate the min and max points of each box
+        min1 = pos1 - size1 / 2
+        max1 = pos1 + size1 / 2
+        min2 = pos2 - size2 / 2
+        max2 = pos2 + size2 / 2
+
+        # Calculate overlap distances along each axis
+        overlap_x = max1.x - min2.x if pos1.x < pos2.x else max2.x - min1.x
+        overlap_y = max1.y - min2.y if pos1.y < pos2.y else max2.y - min1.y
+        overlap_z = max1.z - min2.z if pos1.z < pos2.z else max2.z - min1.z
+
+        # If there is no overlap on any axis, return the original position
+        if overlap_x <= 0 or overlap_y <= 0 or overlap_z <= 0:
+            return False
+
+        return True
     
     @staticmethod
     def check_aabb_collision(
@@ -231,22 +271,33 @@ class AnimationSystem(System):
 
             animation = animation_component.animations[anim_name]
             keyframe = animation_component.keyframe
+            keyframes = animation['keyframes']
 
-            if len(animation) - 1 <= keyframe:
-                animation_component.paused = True
-                animation_component.current_animation = ''
+            if len(keyframes) - 1 <= keyframe:
+                animation_component.animation_time = 0
+                animation_component.keyframe = 0
+
+                if not animation['loop']:
+                    animation_component.paused = True
+                    animation_component.current_animation = ''
                 continue
 
-            animation_component.animation_time += 0.01
 
-            position = glm.lerp(animation[keyframe].position, animation[keyframe + 1].position, animation_component.animation_time)
-            rotation = glm.lerp(animation[keyframe].rotation, animation[keyframe + 1].rotation, animation_component.animation_time)
-            scale = glm.lerp(animation[keyframe].scale, animation[keyframe + 1].scale, animation_component.animation_time)
+            current_keyframe = keyframes[keyframe]
+            next_keyframe = keyframes[keyframe + 1]
+            
+            animation_component.animation_time += 1
+            next_keyframe_frame = next_keyframe.time - current_keyframe.time
+            lerp_value = (1 / next_keyframe_frame) * (animation_component.animation_time - current_keyframe.time)
+            
+            position = glm.lerp(current_keyframe.position, next_keyframe.position, lerp_value)
+            rotation = glm.lerp(current_keyframe.rotation, next_keyframe.rotation, lerp_value)
+            scale = glm.lerp(current_keyframe.scale, next_keyframe.scale, lerp_value)
             
 
-            if animation_component.animation_time >= 1:
+            if animation_component.animation_time >= next_keyframe.time:
                 animation_component.keyframe += 1
-                animation_component.animation_time = 0
+                # animation_component.animation_time = 0
 
             entity.position = position
             entity.rotation = rotation

@@ -12,11 +12,15 @@ class Player(ScriptComponent):
         self.camera = None
         self.character_body : CharacterBody = None
         self.sword_animator : AnimationComponent = None
+        self.hurtbox = None
+
 
     def update(self):
         self.rotate()
         self.jump()
         self.move()
+        if self.hurtbox:
+            print(self.hurtbox.overlaping_colliders)
 
     def move(self):
         keys = pg.key.get_pressed()
