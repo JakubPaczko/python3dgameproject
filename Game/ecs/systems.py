@@ -8,6 +8,7 @@ import numpy as np
 import sys
 from light import Light
 from ecs.model import Mesh
+from random import uniform
 
 class System:
     def __init__(self, scene):
@@ -16,16 +17,6 @@ class System:
     def update(self):
         pass
 
-class TestSystem(System):
-    def __init__(self, scene):
-        super().__init__(scene)
-
-    def update(self):
-        for x in self.scene.filter_enitities_by_component(TestComponent):
-            component : TestComponent = x.get_component(TestComponent)
-            print(component.x)
-            component.x += 0.1
-        
 class RenderSystem(System):
 
     def __init__(self, scene):
@@ -61,15 +52,25 @@ class RenderSystem(System):
             m_model = entity.get_world_transform()
             vao = self.mesh.vao.vaos[component.vao_name]
             self.update_vao(vao, m_model)
-            
-            
             vao.render()
+
+        for entity in self.scene.filter_enitities_by_component(ParticleComponent):
+            component : ParticleComponent = entity.get_component(ParticleComponent)
+            texture = self.mesh.texture.textures[component.tex_id]
+            texture.use()
+            
+            for particle in component.particles:
+
+                m_model = self.get_model_matrix(particle.position, glm.vec3(0, 0, 0), particle.scale)
+                vao = self.mesh.vao.vaos['skull']
+                self.update_vao(vao, m_model)
+                vao.render()
 
         if self.scene.app.DEBUG:
             for entity in self.scene.filter_enitities_by_component(AABBColliderComponent):
                 component : AABBColliderComponent = entity.get_component(AABBColliderComponent)
                 
-                m_model = self.get_model_matrix(entity.get_global_position(), glm.vec3(0, 0, 0), entity.scale * component.size)
+                m_model = self.get_model_matrix(entity.get_global_position(), glm.vec3(0, 0, 0), component.size)
                 # m_model = entity.get_world_transform()
                 vao = self.mesh.vao.vaos['AABB_col']
                 self.update_wireframe_vao(vao, m_model)
@@ -153,6 +154,14 @@ class CollisionSystem(System):
 
             for entity2 in self.scene.filter_enitities_by_specific_component(AABBColliderComponent):
                 if entity1 == entity2: continue
+                character_body2 = entity2.get_component(CharacterBody)
+
+                if character_body2 and self.is_overlaping(entity1.get_global_position(), component1.size, entity2.get_global_position(), component2.size):
+                    dir_vec = entity1.position - entity2.position
+                    character_body.velocity += glm.normalize(dir_vec) * 0.001
+                    character_body2.velocity += glm.normalize(-dir_vec) * 0.001
+                    continue
+
                 component2 = entity2.get_component(AABBColliderComponent)
                 
                 collision_data = self.check_aabb_collision(entity1.get_global_position(), component1.size, entity2.get_global_position(), component2.size)
@@ -303,3 +312,35 @@ class AnimationSystem(System):
             entity.rotation = rotation
             entity.scale = scale
 
+class ParticleSystem(System):
+    def __init__(self, scene):
+        super().__init__(scene)
+
+    def update(self):
+        for entity in self.scene.filter_enitities_by_component(ParticleComponent):
+            particle_component : ParticleComponent = entity.get_component(ParticleComponent)
+
+
+            for particle in particle_component.particles[::-1]:
+                particle.time += 1
+                particle.position += particle.velocity
+                particle.velocity *= particle_component.drag
+                particle.velocity.y -= particle_component.gravity
+
+
+                if particle.time >= particle_component.lifespan:
+                    particle_component.particles.remove(particle)
+
+            particles_to_add = particle_component.max_particles - len(particle_component.particles) - 1
+
+            if particle_component.emiting:
+                for i in range(particles_to_add):
+                    vel_min = particle_component.vel_min
+                    ven_max = particle_component.vel_max
+
+                    velocity = glm.vec3(uniform(vel_min.x, ven_max.x), 
+                                        uniform(vel_min.y, ven_max.y), 
+                                        uniform(vel_min.z, ven_max.z))
+                    
+                    particle = ParticleComponent.Particle(entity.get_global_position(), velocity)
+                    particle_component.particles.append(particle)

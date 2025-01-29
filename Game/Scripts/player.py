@@ -1,4 +1,5 @@
 from ecs.component import *
+from Scripts.enemy import Enemy
 import pygame as pg
 import glm
 
@@ -9,18 +10,24 @@ class Player(ScriptComponent):
         self.SENSITIVITY = 0.1
         self.JUMP_FORCE = 0.05
         self.SPEED = 0.1
+        self.ATTACK_DAMAGE = 10
         self.camera = None
         self.character_body : CharacterBody = None
         self.sword_animator : AnimationComponent = None
         self.hurtbox = None
+
+        self.can_attack = True
+        self.attack_timer = 0
+        self.attack_cooldown = 60
 
 
     def update(self):
         self.rotate()
         self.jump()
         self.move()
-        if self.hurtbox:
-            print(self.hurtbox.overlaping_colliders)
+        self.attack()
+        # if self.hurtbox:
+        #     print(self.hurtbox.overlaping_colliders)
 
     def move(self):
         keys = pg.key.get_pressed()
@@ -42,7 +49,33 @@ class Player(ScriptComponent):
         glm.normalize(input_vector)
         input_vector *= self.SPEED
         self.character_body.velocity = glm.vec3(input_vector.x, self.character_body.velocity.y, input_vector.z)
+    
+    def attack(self):
+        if not self.sword_animator: return
+
+        if self.attack_timer == 30:
+            for collider in self.hurtbox.overlaping_colliders:
+                enemy = collider.owner.get_component(Enemy)
+                if enemy:
+                    enemy.hp -= self.ATTACK_DAMAGE
+                    print(enemy.hp)
+
+
+        if not self.can_attack: 
+            self.attack_timer +=1
+            if self.attack_timer > self.attack_cooldown:
+                self.can_attack = True
+                self.attack_timer = 0
+            return
         
+        keys = pg.mouse.get_pressed()
+
+        if keys[0]:
+            self.can_attack = False
+            self.sword_animator.paused = False
+            self.sword_animator.current_animation = 'idle'
+
+
 
     def rotate(self):
 

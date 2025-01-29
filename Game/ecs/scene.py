@@ -17,8 +17,12 @@ class Scene:
     def update(self):
         for system in self.systems:
             system.update()
-    
-    
+        
+        to_delete = [key for key, obj in self.gameObjects.items() if obj.queue_delete]
+
+        for key in to_delete:
+            del self.gameObjects[key]
+
     def add_entity(self, gameObject : GameObject):
         gameObject.scene = self
         gameObject.enter_scene()

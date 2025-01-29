@@ -5,8 +5,10 @@ import ecs.systems
 from ecs.component import * 
 import numpy as np
 from Scripts.player import Player
+from Scripts.enemy import Enemy
 from ecs.gameObject import GameObject
 from ecs.scene import Scene
+import random
 
 class Engine:
     def __init__(self, win_size=(1920, 1080), resolution = (int(1920/4), int(1080/4))):
@@ -31,7 +33,9 @@ class Engine:
         self.ctx = mgl.create_context()
         self.ctx.enable(flags=mgl.DEPTH_TEST | mgl.CULL_FACE)
         # self.ctx.wireframe = True
-
+        self.ctx.enable(mgl.BLEND)
+        self.ctx.blend_func = mgl.SRC_ALPHA, mgl.ONE_MINUS_SRC_ALPHA
+        
         self.time = 0
         self.delta_time = 0
         self.clock = pg.time.Clock()
@@ -43,6 +47,7 @@ class Engine:
         self.scene.add_system(ecs.systems.CollisionSystem(self.scene))
         self.scene.add_system(ecs.systems.ScriptSystem(self.scene))
         self.scene.add_system(ecs.systems.AnimationSystem(self.scene))
+        self.scene.add_system(ecs.systems.ParticleSystem(self.scene))
 
         system = ecs.systems.RenderSystem(scene=self.scene)
         self.scene.add_system(system)
@@ -83,12 +88,13 @@ class Engine:
         sword_animation.add_keyframe('idle', glm.vec3(-1, -1, 1.5), glm.quat(0, -20, 90, 0), glm.vec3(0.3, 0.3, 0.3), 20)
         sword_animation.add_keyframe('idle', glm.vec3(0, -0.5, 0.5), glm.quat(0, 90, 180, 45), glm.vec3(0.3, 0.3, 0.3), 30)
         sword_animation.add_keyframe('idle', glm.vec3(-1, -1, 1.5), glm.quat(0, 0, 90, 0), glm.vec3(0.3, 0.3, 0.3), 60)
-        sword_animation.add_keyframe('idle', glm.vec3(-1, -1, 1.5), glm.quat(0, 0, 90, 0), glm.vec3(0.3, 0.3, 0.3), 120)
-
+        # sword_animation.add_keyframe('idle', glm.vec3(-1, -1, 1.5), glm.quat(0, 0, 90, 0), glm.vec3(0.3, 0.3, 0.3), 120)
+        player_component.sword_animator = sword_animation
         # sword_animation.add_keyframe('idle', glm.vec3(-1, 0, 1.5), glm.quat(0, 90, 90, 0), glm.vec3(0.3, 0.3, 0.3), 60)
         # sword_animation.add_keyframe('idle', glm.vec3(-1, -1, 1.5), glm.quat(0, 0, 90, 0), glm.vec3(0.3, 0.3, 0.3), 120)
         
         sword_animation.current_animation = 'idle'
+        sword_animation.animations['idle']['loop'] = False
         sword_animation.paused = False
 
         # sword_animation.animations['idle'] = { 1 : {} }
@@ -100,7 +106,7 @@ class Engine:
         camera.add_child(sword)
 
         attack_collider_component = AABBTriggerArea()
-        attack_collider_component.size = glm.vec3(1, 1, 1)
+        attack_collider_component.size = glm.vec3(1.5, 1, 1.5)
 
         attack_collider = GameObject()
         attack_collider.position = glm.vec3(0, 0, 2)
@@ -111,7 +117,25 @@ class Engine:
         attack_collider2 = GameObject()
         attack_collider2.position = glm.vec3(0, 1, 0)
         attack_collider2.addComponent(AABBTriggerArea())
+        attack_collider2.addComponent(ParticleComponent())
 
+        for i in range(10):
+            enemy = GameObject()
+            enemy.scale = glm.vec3(0.01, 0.01, 0.01)
+            enemy.position = glm.vec3(random.randrange(- 10, 10), random.randrange(0, 10), random.randrange(- 10, 10))
+            enemy_component : Enemy = Enemy()
+            enemy_character_body = CharacterBody()
+            enemy.addComponent(enemy_component)
+            enemy.addComponent(enemy_character_body)
+            enemy.addComponent(AABBColliderComponent())
+            enemy.addComponent(AABBTriggerArea())
+            enemy.addComponent(ModelComponent('plane'))
+            enemy_component.player = player
+            enemy_component.character_body = enemy_character_body
+            self.scene.add_entity(enemy)
+        
+        
+        
         self.scene.add_entity(attack_collider2)
         self.scene.add_entity(attack_collider)
         self.scene.add_entity(camera)

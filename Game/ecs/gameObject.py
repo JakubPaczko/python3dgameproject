@@ -6,7 +6,7 @@ class GameObject:
         self.position = glm.vec3(0, 0, 0)
         self.rotation = glm.quat(0, 0, 0, 0)
         self.scale = glm.vec3(1, 1, 1)
-
+        self.queue_delete = False
         self.parent = None
         self.children = []
         self.components : list["Component"] = []

@@ -11,6 +11,8 @@ class ShaderProgram:
         self.programs = {}
         self.programs['default'] = self.get_program('default')
         self.programs['wireframe'] = self.get_program('wireframe')
+        self.programs['billboard'] = self.get_program('billboard')
+
 
     
     def get_program(self, shader_name):
@@ -33,7 +35,9 @@ class VBO:
         self.vbos['cube'] = CubeVbo(ctx)
         # self.vbos['skull'] = SkullVBO(ctx)
         self.vbos['cube_wireframe'] = CubeWireframeVBO(ctx)
-        self.vbos['skull'] = LoadVBO(ctx, 'objects/skull/skull.obj')
+        self.vbos['plane'] = PlaneVbo(ctx)
+
+        self.vbos['skull'] = PlaneVbo(ctx)#LoadVBO(ctx, 'objects/skull/skull.obj')
         self.vbos['skeleton'] = LoadVBO(ctx, 'objects/skeleton/skeleton.obj')
         self.vbos['wall'] = LoadVBO(ctx, 'objects/wall/wall.obj')
         self.vbos['sword'] = LoadVBO(ctx, 'objects/weapons/long_sword.obj')
@@ -107,6 +111,38 @@ class CubeVbo(BaseVBO):
 
         return vertex_data
 
+class PlaneVbo(BaseVBO):
+    def __init__(self, ctx):
+        super().__init__(ctx)
+        self.format = '2f 3f 3f'
+        self.attrib = ['in_texcoord_0', 'in_normal', 'in_position']
+
+    @staticmethod
+    def get_data(vertices, indices):
+            data = [vertices[ind] for triangle in indices for ind in triangle]
+            return np.array(data, dtype='f4')
+    
+    def get_vertex_data(self):
+        vertices = [(-0.5, -0.5, 0), (0.5, -0.5, 0),  (0.5, 0.5, 0),  (-0.5, 0.5, 0)]
+
+        indices = [(0,1,2), (0,2,3)]
+        
+        vertex_data = self.get_data(vertices, indices)
+
+        tex_coord = [(0, 0), (1, 0), (1, 1), (0, 1)]
+        tex_coord_indices = [(0, 1, 2), (0, 2, 3)]
+        
+        tex_coord_data = self.get_data(tex_coord, tex_coord_indices)
+
+        normals = [( 0, 1, 0) * 6]
+        
+        normals = np.array(normals, dtype='f4').reshape(6, 3)
+
+        vertex_data = np.hstack([normals, vertex_data])
+        vertex_data = np.hstack([tex_coord_data, vertex_data])
+
+        return vertex_data
+
 class CubeWireframeVBO(CubeVbo):
     def __init__(self, ctx):
         super().__init__(ctx)
@@ -171,7 +207,7 @@ class VAO:
             vbo = self.vbo.vbos['cube_wireframe'] )
 
         self.vaos['skull'] = self.get_vao(
-            program = self.program.programs['default'],
+            program = self.program.programs['billboard'],
             vbo = self.vbo.vbos['skull'] )
         
         self.vaos['skeleton'] = self.get_vao(
@@ -185,6 +221,10 @@ class VAO:
         self.vaos['sword'] = self.get_vao(
             program = self.program.programs['default'],
             vbo = self.vbo.vbos['sword'] )
+        
+        self.vaos['plane'] = self.get_vao(
+            program = self.program.programs['billboard'],
+            vbo = self.vbo.vbos['plane'] )
         
     def get_vao(self, program, vbo):
         vao = self.ctx.vertex_array(program, [(vbo.vbo, vbo.format, *vbo.attrib)])
@@ -203,6 +243,8 @@ class Texture:
         self.textures[2] = self.get_texture('objects/wall/wall_texture.png')
         self.textures[3] = self.get_texture('objects/skeleton/skeleton_texture.png')
         self.textures[4] = self.get_texture('objects/weapons/long_sword_texture.png')
+        self.textures[5] = self.get_texture('textures/blood_particle.png')
+
 
 
 

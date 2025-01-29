@@ -84,4 +84,25 @@ class AnimationComponent(Component):
 
         self.animations[animation_name]['keyframes'].append(keyframe)
         
+class ParticleComponent(Component):
+    class Particle:
+        def __init__(self, position, velocity, scale = glm.vec3(0.1, 0.1, 0.1)):
+            self.position = position
+            self.velocity = velocity
+            self.scale = scale
+            self.time = 0
+
+    def __init__(self):
+        super().__init__()
+        self.emiting = True
+        self.max_particles = 16 
+        self.particles = []
+        self.gravity = 0.01
+        self.vel_max = glm.vec3(0.1, 0.5, 0.1)
+        self.vel_min = glm.vec3(-0.1, 0, -0.1)
+        self.lifespan = 100
+        self.drag = 0.99
+        self.tex_id = 5
+    
+
 
