@@ -1,6 +1,9 @@
 from ecs.component import *
 import pygame as pg
+import numpy as np
 import glm
+import random
+from Scripts.soundManager import SoundManager 
 
 
 class Enemy(ScriptComponent):
@@ -13,7 +16,11 @@ class Enemy(ScriptComponent):
         self.character_body = None
         self.drag = 0.99
         self.look_dir = glm.vec3(0, 1, 0)
-    
+        self.particle_component = None
+
+    def take_damage(self):
+        SoundManager.instance().play_sound_rand_pitch('hit')
+
     def start(self):
         self.character_body.gravity = 0
 
@@ -24,7 +31,7 @@ class Enemy(ScriptComponent):
         if self.character_body and self.player:
             dir_vec = self.player.position.xz - self.owner.position.xz
 
-            dist = glm.length( dir_vec )
+            dist = glm.length(dir_vec)
 
             if dist > 10:
                 dir_vec = glm.vec3(dir_vec.x, 0, dir_vec.y) + glm.vec3(0, 1, 0) * (dist / 5)
@@ -35,26 +42,28 @@ class Enemy(ScriptComponent):
             self.look_dir = glm.lerp(self.look_dir, dir_vec, 0.05)
             self.character_body.velocity += self.look_dir * self.speed * 0.001 
             self.character_body.velocity *= self.drag
-            self.owner.rotation = self.calculate_lookat_quaternion(self.owner.position, self.player.position)        
-    
+
+            self.calculate_lookat_quaternion(
+                self.owner.position,
+                self.owner.position + self.character_body.velocity
+            )
+
+    def change_pitch_numpy(self, sound, pitch_factor):
+        """ Adjust the pitch using NumPy by changing the playback speed """
+        sound_array = pg.sndarray.array(sound)
+        new_length = int(len(sound_array) / pitch_factor)
+        indices = np.round(np.linspace(0, len(sound_array) - 1, new_length)).astype(int)
+        new_sound_array = sound_array[indices]
+        return pg.sndarray.make_sound(new_sound_array)
+
     def calculate_lookat_quaternion(self, position1, position2):
         # Calculate direction vector from position1 to position2
-        direction = glm.normalize(position2 - position1)
+        direction = position2 - position1  # Compute direction vector
+        yaw_radians = glm.atan(direction.x, direction.z)  # Compute yaw angle (radians)
+        yaw_degrees = glm.degrees(yaw_radians)
         
-        # Default "up" vector
-        up = glm.vec3(0, 1, 0)
-        
-        # Avoid degeneracy by checking if direction is parallel to up
-        if glm.length(glm.cross(direction, up)) < 1e-6:
-            up = glm.vec3(1, 0, 0)  # Use a different up vector
-        
-        # Create the look-at matrix
-        look_at_matrix = glm.lookAt(position1, position2, up)
-        
-        # Extract rotation (upper-left 3x3 part of the matrix)
-        rotation_matrix = glm.mat3(look_at_matrix)
-        
-        # Convert the rotation matrix to a quaternion
-        look_at_quaternion = glm.quat_cast(rotation_matrix)
-        
-        return look_at_quaternion
+        self.owner.rotation.y = yaw_degrees
+        # return glm.quat(x=glm.degrees(quat.x), 
+                        # y=glm.degrees(quat.y), 
+                        # z=glm.degrees(quat.z), 
+                        # w=glm.degrees(quat.w))

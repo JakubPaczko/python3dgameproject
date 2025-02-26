@@ -5,6 +5,7 @@ import pywavefront
 import moderngl as mgl
 from ecs.component import Component
 
+
 class ShaderProgram:
     def __init__(self, ctx):
         self.ctx = ctx
@@ -12,22 +13,25 @@ class ShaderProgram:
         self.programs['default'] = self.get_program('default')
         self.programs['wireframe'] = self.get_program('wireframe')
         self.programs['billboard'] = self.get_program('billboard')
+        self.programs['ui'] = self.get_program('ui')
 
-
-    
     def get_program(self, shader_name):
         with open(f'shaders/{shader_name}.vert') as file:
             vertex_shader = file.read()
 
         with open(f'shaders/{shader_name}.frag') as file:
             fragment_shader = file.read()
-        
-        program = self.ctx.program(vertex_shader=vertex_shader, fragment_shader=fragment_shader)
+
+        program = self.ctx.program(
+            vertex_shader=vertex_shader,
+            fragment_shader=fragment_shader
+        )
 
         return program
-    
+
     def destroy(self):
         [program.release() for program in self.programs.values()]
+
 
 class VBO:
     def __init__(self, ctx):
@@ -36,17 +40,19 @@ class VBO:
         # self.vbos['skull'] = SkullVBO(ctx)
         self.vbos['cube_wireframe'] = CubeWireframeVBO(ctx)
         self.vbos['plane'] = PlaneVbo(ctx)
-
-        self.vbos['skull'] = PlaneVbo(ctx)#LoadVBO(ctx, 'objects/skull/skull.obj')
-        self.vbos['skeleton'] = LoadVBO(ctx, 'objects/skeleton/skeleton.obj')
+        self.vbos['ui'] = UIVbo(ctx)
+        self.vbos['skull'] = LoadVBO(ctx, 'objects/skull/skull.obj')
+        self.vbos['skull_boss'] = LoadVBO(ctx, 'objects/skull/skull_boss.obj')
         self.vbos['wall'] = LoadVBO(ctx, 'objects/wall/wall.obj')
         self.vbos['sword'] = LoadVBO(ctx, 'objects/weapons/long_sword.obj')
 
 
 
 
+
     def destroy(self):
         [vbo.destroy() for vbo in self.vbos.values()]
+
 
 class BaseVBO:
     def __init__(self, ctx):
@@ -66,6 +72,7 @@ class BaseVBO:
     def destroy(self):
         self.vbo.release()
 
+
 class CubeVbo(BaseVBO):
     def __init__(self, ctx):
         super().__init__(ctx)
@@ -78,8 +85,12 @@ class CubeVbo(BaseVBO):
             return np.array(data, dtype='f4')
     
     def get_vertex_data(self):
-        vertices = [(-0.5, -0.5, 0.5), (0.5, -0.5, 0.5,),  (0.5, 0.5, 0.5),  (-0.5, 0.5, 0.5),
-                    (-0.5, 0.5, -0.5), (-0.5, -0.5, -0.5), (0.5, -0.5, -0.5), (0.5, 0.5, -0.5)]
+        vertices = [
+            (-0.5, -0.5, 0.5), (0.5, -0.5, 0.5,),
+            (0.5, 0.5, 0.5),  (-0.5, 0.5, 0.5),
+            (-0.5, 0.5, -0.5), (-0.5, -0.5, -0.5),
+            (0.5, -0.5, -0.5), (0.5, 0.5, -0.5)
+        ]
 
         indices = [(0, 2, 3), (0, 1, 2), (1, 7, 2), (1, 6, 7),
                    (6, 5, 4), (4, 7, 6), (3, 4, 5), (3, 5, 0),
@@ -97,11 +108,11 @@ class CubeVbo(BaseVBO):
         
         tex_coord_data = self.get_data(tex_coord, tex_coord_indices)
 
-        normals = [( 0, 0, 1) * 6,
-                   ( 1, 0, 0) * 6,
-                   ( 0, 0,-1) * 6,
+        normals = [(0, 0, 1) * 6,
+                   (1, 0, 0) * 6,
+                   (0, 0, -1) * 6,
                    (-1, 0, 0) * 6,
-                   ( 0, 1, 0) * 6,
+                   (0, 1, 0) * 6,
                    (0, -1, 0) * 6]
         
         normals = np.array(normals, dtype='f4').reshape(36, 3)
@@ -110,6 +121,7 @@ class CubeVbo(BaseVBO):
         vertex_data = np.hstack([tex_coord_data, vertex_data])
 
         return vertex_data
+
 
 class PlaneVbo(BaseVBO):
     def __init__(self, ctx):
@@ -143,6 +155,7 @@ class PlaneVbo(BaseVBO):
 
         return vertex_data
 
+
 class CubeWireframeVBO(CubeVbo):
     def __init__(self, ctx):
         super().__init__(ctx)
@@ -163,6 +176,7 @@ class CubeWireframeVBO(CubeVbo):
         
         return vertex_data
 
+
 class SkullVBO(BaseVBO):
     def __init__(self, ctx):
         super().__init__(ctx)
@@ -175,6 +189,7 @@ class SkullVBO(BaseVBO):
         vertex_data = obj.vertices
         vertex_data = np.array(vertex_data, dtype='f4')
         return vertex_data
+
 
 class LoadVBO(BaseVBO):
     def __init__(self, ctx, path):
@@ -189,6 +204,7 @@ class LoadVBO(BaseVBO):
         vertex_data = obj.vertices
         vertex_data = np.array(vertex_data, dtype='f4')
         return vertex_data
+
 
 class VAO:
     def __init__(self, ctx):
@@ -207,32 +223,42 @@ class VAO:
             vbo = self.vbo.vbos['cube_wireframe'] )
 
         self.vaos['skull'] = self.get_vao(
-            program = self.program.programs['billboard'],
+            program = self.program.programs['default'],
             vbo = self.vbo.vbos['skull'] )
         
-        self.vaos['skeleton'] = self.get_vao(
-            program = self.program.programs['default'],
-            vbo = self.vbo.vbos['skeleton'] )
-        
         self.vaos['wall'] = self.get_vao(
-            program = self.program.programs['default'],
-            vbo = self.vbo.vbos['wall'] )
+            program=self.program.programs['default'],
+            vbo=self.vbo.vbos['wall'] )
         
         self.vaos['sword'] = self.get_vao(
-            program = self.program.programs['default'],
-            vbo = self.vbo.vbos['sword'] )
+            program=self.program.programs['default'],
+            vbo=self.vbo.vbos['sword'] )
         
         self.vaos['plane'] = self.get_vao(
-            program = self.program.programs['billboard'],
-            vbo = self.vbo.vbos['plane'] )
+            program=self.program.programs['billboard'],
+            vbo=self.vbo.vbos['plane'] )
+        
+        self.vaos['ui'] = self.get_vao(
+            program=self.program.programs['ui'],
+            vbo=self.vbo.vbos['ui']
+        )
+
+        self.vaos['skull_boss'] = self.get_vao(
+            program=self.program.programs['default'],
+            vbo=self.vbo.vbos['skull_boss']
+        )
         
     def get_vao(self, program, vbo):
-        vao = self.ctx.vertex_array(program, [(vbo.vbo, vbo.format, *vbo.attrib)])
+        vao = self.ctx.vertex_array(
+            program,
+            [(vbo.vbo, vbo.format, *vbo.attrib)]
+        )
         return vao
     
     def destroy(self):
         self.vbo.destroy()
         self.program.destroy()
+
 
 class Texture:
     def __init__(self, ctx, path='textures/test2.png'):
@@ -244,10 +270,6 @@ class Texture:
         self.textures[3] = self.get_texture('objects/skeleton/skeleton_texture.png')
         self.textures[4] = self.get_texture('objects/weapons/long_sword_texture.png')
         self.textures[5] = self.get_texture('textures/blood_particle.png')
-
-
-
-
         # self.textures['skybox'] = self.get_texture_cube()
 
     def get_texture_cube(self, dir_path, ext='png'):
@@ -274,6 +296,7 @@ class Texture:
     def destroy(self):
         self.texture.release()
 
+
 class Mesh:
     def __init__(self, app):
         self.app = app
@@ -283,6 +306,7 @@ class Mesh:
     def destroy(self):
         self.vao.destroy()
         self.texture.destroy()
+
 
 class BaseModel():
     def __init__(self, app):
@@ -329,6 +353,7 @@ class BaseModel():
         self.update()
         self.vao.render()
 
+
 class CubeModel(BaseModel):
 
     def update(self):
@@ -351,3 +376,34 @@ class CubeModel(BaseModel):
         self.program['light.Ia'].write(self.app.light.Ia)
         self.program['light.Id'].write(self.app.light.Id)
         self.program['light.Is'].write(self.app.light.Is)
+
+
+class UIVbo(BaseVBO):
+    def __init__(self, ctx):
+        super().__init__(ctx)
+        self.format = '2f 3f'
+        self.attrib = ['in_texcoord_0', 'in_position']
+
+    @staticmethod
+    def get_data(vertices, indices):
+        data = [vertices[ind] for triangle in indices for ind in triangle]
+        return np.array(data, dtype='f4')
+
+    def get_vertex_data(self):
+        vertices = [
+            (0, 0, 0), (1, 0, 0),  (1, 1, 0),  (0, 1, 0)
+        ]
+
+        indices = [(2, 1, 0), (2, 0, 3)]
+
+        vertex_data = self.get_data(vertices, indices)
+
+        tex_coord = [(0, 0), (1, 0), (1, 1), (0, 1)]
+        tex_coord_indices = [(2, 1, 0), (2, 0, 3)]
+
+        tex_coord_data = self.get_data(tex_coord, tex_coord_indices)
+
+        # vertex_data = np.hstack([normals, vertex_data])
+        vertex_data = np.hstack([tex_coord_data, vertex_data])
+
+        return vertex_data

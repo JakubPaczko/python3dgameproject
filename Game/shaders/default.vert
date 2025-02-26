@@ -4,7 +4,6 @@ layout (location = 0) in vec2 in_texcoord_0;
 layout (location = 1) in vec3 in_normal;
 layout (location = 2) in vec3 in_position;
 
-
 out vec2 uv_0;
 out vec3 normal;
 out vec3 fragPos;

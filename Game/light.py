@@ -5,5 +5,5 @@ class Light:
         self.color = glm.vec3(color)
 
         self.Ia = 0.3 * self.color
-        self.Id = 1.0 * self.color
+        self.Id = 0.5 * self.color
         self.Is = 0.0 * self.color

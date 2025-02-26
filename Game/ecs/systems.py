@@ -9,6 +9,7 @@ import sys
 from light import Light
 from ecs.model import Mesh
 from random import uniform
+import glm
 
 class System:
     def __init__(self, scene):
@@ -62,7 +63,7 @@ class RenderSystem(System):
             for particle in component.particles:
 
                 m_model = self.get_model_matrix(particle.position, glm.vec3(0, 0, 0), particle.scale)
-                vao = self.mesh.vao.vaos['skull']
+                vao = self.mesh.vao.vaos['plane']
                 self.update_vao(vao, m_model)
                 vao.render()
 
@@ -77,10 +78,27 @@ class RenderSystem(System):
                 
                 
                 vao.render(mgl.LINES)
+
+        for entity in self.scene.filter_enitities_by_component(UiTextComponent):
+            component: UiTextComponent = entity.get_component(UiTextComponent)
+            
+            # texture = self.mesh.texture.textures[component.tex_id]
+            texture.use()
+            m_model = entity.get_world_transform()
+            vao = self.mesh.vao.vaos['ui']
+            self.update_ui_vao(vao, m_model)
+            vao.render()
+
+    def update_ui_vao(self, vao, m_model):
+        w, h = pg.display.get_surface().get_size()
+        ui_proj = glm.ortho(0, w, h, 0, -1, -1)
+        # vao.program['u_texture_0'] = 0
+        # vao.program['in_uv_0'].write(glm.vec2(1, 1))
+        # vao.program['in_vert'].write(glm.vec2(1, 1))
+        vao.program['m_proj'].write(ui_proj)
+        vao.program['m_model'].write(m_model)
         
-
-
-
+        return vao
 
     def get_vao(self, vao_name, m_model):
         vao = self.mesh.vao.vaos[vao_name]
@@ -100,7 +118,7 @@ class RenderSystem(System):
     
     def update_vao(self, vao, m_model):
         program = vao.program
-        
+
         program['u_texture_0'] = 0
 
         program['m_proj'].write(self.camera.m_proj)
@@ -111,7 +129,7 @@ class RenderSystem(System):
         program['light.Ia'].write(self.light.Ia)
         program['light.Id'].write(self.light.Id)
         program['light.Is'].write(self.light.Is)
-    
+
     def update_wireframe_vao(self, vao, m_model):
         program = vao.program
 
@@ -119,11 +137,10 @@ class RenderSystem(System):
         program['m_view'].write(self.camera.m_view)
         program['m_model'].write(m_model)
 
-
     @staticmethod
-    def get_model_matrix(position : glm.vec3, rotation : glm.vec3, scale : glm.vec3) -> glm.mat4:
+    def get_model_matrix(position: glm.vec3, rotation: glm.vec3, scale: glm.vec3) -> glm.mat4:
         m_model = glm.mat4()
-        
+
         m_model = glm.translate(m_model, position)
 
         m_model = glm.rotate(m_model, glm.radians(rotation.x), glm.vec3(1, 0, 0))
@@ -131,7 +148,7 @@ class RenderSystem(System):
         m_model = glm.rotate(m_model, glm.radians(rotation.z), glm.vec3(0, 0, 1))
 
         m_model = glm.scale(m_model, scale)
-    
+
         return m_model
     
 class CollisionSystem(System):
@@ -225,9 +242,9 @@ class CollisionSystem(System):
         max2 = pos2 + size2 / 2
 
         # Calculate overlap distances along each axis
-        overlap_x = max1.x - min2.x if pos1.x < pos2.x else max2.x - min1.x
-        overlap_y = max1.y - min2.y if pos1.y < pos2.y else max2.y - min1.y
-        overlap_z = max1.z - min2.z if pos1.z < pos2.z else max2.z - min1.z
+        overlap_x = max1.x - min2.x if pos1.x <= pos2.x else max2.x - min1.x
+        overlap_y = max1.y - min2.y if pos1.y <= pos2.y else max2.y - min1.y
+        overlap_z = max1.z - min2.z if pos1.z <= pos2.z else max2.z - min1.z
 
         # If there is no overlap on any axis, return the original position
         if overlap_x <= 0 or overlap_y <= 0 or overlap_z <= 0:
@@ -330,6 +347,7 @@ class ParticleSystem(System):
 
                 if particle.time >= particle_component.lifespan:
                     particle_component.particles.remove(particle)
+                    particle_component.emiting = False
 
             particles_to_add = particle_component.max_particles - len(particle_component.particles) - 1
 
@@ -338,8 +356,8 @@ class ParticleSystem(System):
                     vel_min = particle_component.vel_min
                     ven_max = particle_component.vel_max
 
-                    velocity = glm.vec3(uniform(vel_min.x, ven_max.x), 
-                                        uniform(vel_min.y, ven_max.y), 
+                    velocity = glm.vec3(uniform(vel_min.x, ven_max.x),
+                                        uniform(vel_min.y, ven_max.y),
                                         uniform(vel_min.z, ven_max.z))
                     
                     particle = ParticleComponent.Particle(entity.get_global_position(), velocity)

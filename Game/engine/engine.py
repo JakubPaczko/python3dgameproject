@@ -4,44 +4,42 @@ import moderngl as mgl
 import ecs.systems 
 from ecs.component import * 
 import numpy as np
-from Scripts.player import Player
-from Scripts.enemy import Enemy
+from Scripts.GameManager import GameManager
 from ecs.gameObject import GameObject
 from ecs.scene import Scene
 import random
+from imgui.integrations.pygame import PygameRenderer
+import imgui
 
 class Engine:
-    def __init__(self, win_size=(1920, 1080), resolution = (int(1920/4), int(1080/4))):
-        #init pygame modules
+    def __init__(self, win_size=(1920, 1080), resolution=(int(1920/4), int(1080/4))):
         pg.init()
-        #set window size
+
         self.WIN_SIZE = win_size
         self.RESOLUTION = resolution
-        self.DEBUG = True
-
+        self.DEBUG = False
 
         pg.display.gl_set_attribute(pg.GL_CONTEXT_MAJOR_VERSION, 3)
         pg.display.gl_set_attribute(pg.GL_CONTEXT_MINOR_VERSION, 3)
         pg.display.gl_set_attribute(pg.GL_CONTEXT_PROFILE_MASK, pg.GL_CONTEXT_PROFILE_CORE)
 
         pg.display.set_mode((self.WIN_SIZE[0], self.WIN_SIZE[1]), flags=pg.OPENGL | pg.DOUBLEBUF)
+        
+        
 
         pg.event.set_grab(True)
         pg.mouse.set_visible(False)
-
-
+        
         self.ctx = mgl.create_context()
-        self.ctx.enable(flags=mgl.DEPTH_TEST | mgl.CULL_FACE)
-        # self.ctx.wireframe = True
+        self.ctx.enable(flags=mgl.DEPTH_TEST)  #| mgl.CULL_FACE)
         self.ctx.enable(mgl.BLEND)
         self.ctx.blend_func = mgl.SRC_ALPHA, mgl.ONE_MINUS_SRC_ALPHA
+        self.ctx.wireframe = False
         
         self.time = 0
         self.delta_time = 0
         self.clock = pg.time.Clock()
 
-
-# -- test scene
         self.scene = Scene(self)
         self.scene.add_system(ecs.systems.PhysicsSystem(self.scene))
         self.scene.add_system(ecs.systems.CollisionSystem(self.scene))
@@ -52,119 +50,10 @@ class Engine:
         system = ecs.systems.RenderSystem(scene=self.scene)
         self.scene.add_system(system)
 
-
-
-
-        game_object = GameObject()
-        game_object.position = glm.vec3(0, -1, 0)
-        testcomponent = ModelComponent()
-        collisioncompo = AABBColliderComponent()
-        collisioncompo.size = glm.vec3(100, 1, 100)
-        game_object.scale = glm.vec3(99, 1, 99)
-        # game_object.scale = collisioncompo.size
-        game_object.addComponent(collisioncompo)
-        game_object.addComponent(testcomponent)
-        self.scene.add_entity(game_object)
-
-        player = GameObject()
-        player.addComponent(ModelComponent())
-        player.addComponent(AABBColliderComponent())
-        player.addComponent(CharacterBody())
-        player_component = Player()
-        player.addComponent(player_component)
-        player.position = glm.vec3(1, 5, 0)
-        print(player.has_component(ScriptComponent))
-
-        camera = GameObject()
-        camera.addComponent(CameraComponent())
-        camera.position = glm.vec3(0, 1.8, 0)
-        player.add_child(camera)
-
-        sword = GameObject()
-        sword.addComponent(ModelComponent(vao_name='sword'))
-        sword_animation : AnimationComponent = AnimationComponent()
-
-        sword_animation.add_keyframe('idle', glm.vec3(-1, -1, 1.5), glm.quat(0, 0, 90, 0), glm.vec3(0.3, 0.3, 0.3), 1)
-        sword_animation.add_keyframe('idle', glm.vec3(-1, -1, 1.5), glm.quat(0, -20, 90, 0), glm.vec3(0.3, 0.3, 0.3), 20)
-        sword_animation.add_keyframe('idle', glm.vec3(0, -0.5, 0.5), glm.quat(0, 90, 180, 45), glm.vec3(0.3, 0.3, 0.3), 30)
-        sword_animation.add_keyframe('idle', glm.vec3(-1, -1, 1.5), glm.quat(0, 0, 90, 0), glm.vec3(0.3, 0.3, 0.3), 60)
-        # sword_animation.add_keyframe('idle', glm.vec3(-1, -1, 1.5), glm.quat(0, 0, 90, 0), glm.vec3(0.3, 0.3, 0.3), 120)
-        player_component.sword_animator = sword_animation
-        # sword_animation.add_keyframe('idle', glm.vec3(-1, 0, 1.5), glm.quat(0, 90, 90, 0), glm.vec3(0.3, 0.3, 0.3), 60)
-        # sword_animation.add_keyframe('idle', glm.vec3(-1, -1, 1.5), glm.quat(0, 0, 90, 0), glm.vec3(0.3, 0.3, 0.3), 120)
-        
-        sword_animation.current_animation = 'idle'
-        sword_animation.animations['idle']['loop'] = False
-        sword_animation.paused = False
-
-        # sword_animation.animations['idle'] = { 1 : {} }
-        sword.addComponent(sword_animation)
-
-        sword.position = glm.vec3(-1, -1, 1.5)
-        sword.rotation.y = 90
-        sword.scale = glm.vec3(0.3, 0.3, 0.3)
-        camera.add_child(sword)
-
-        attack_collider_component = AABBTriggerArea()
-        attack_collider_component.size = glm.vec3(1.5, 1, 1.5)
-
-        attack_collider = GameObject()
-        attack_collider.position = glm.vec3(0, 0, 2)
-        attack_collider.addComponent(attack_collider_component)
-        camera.add_child(attack_collider)
-        player_component.hurtbox = attack_collider_component
-
-        attack_collider2 = GameObject()
-        attack_collider2.position = glm.vec3(0, 1, 0)
-        attack_collider2.addComponent(AABBTriggerArea())
-        attack_collider2.addComponent(ParticleComponent())
-
-        for i in range(10):
-            enemy = GameObject()
-            enemy.scale = glm.vec3(0.01, 0.01, 0.01)
-            enemy.position = glm.vec3(random.randrange(- 10, 10), random.randrange(0, 10), random.randrange(- 10, 10))
-            enemy_component : Enemy = Enemy()
-            enemy_character_body = CharacterBody()
-            enemy.addComponent(enemy_component)
-            enemy.addComponent(enemy_character_body)
-            enemy.addComponent(AABBColliderComponent())
-            enemy.addComponent(AABBTriggerArea())
-            enemy.addComponent(ModelComponent('plane'))
-            enemy_component.player = player
-            enemy_component.character_body = enemy_character_body
-            self.scene.add_entity(enemy)
-        
-        
-        
-        self.scene.add_entity(attack_collider2)
-        self.scene.add_entity(attack_collider)
-        self.scene.add_entity(camera)
-        self.scene.add_entity(sword)
-        self.scene.add_entity(player)
-        
-
-        # for x in range(0, 10):
-        #     for y in range(0, 10):
-        #         for z in range(0, 10):
-
-        for x in range(0, 5):
-            game_object2 = GameObject()
-            game_object2.position = glm.vec3((20 * x) - 40, -1, 50)
-            game_object2.rotation = glm.quat(0, 0, 90, 0)
-            
-            testcomponent2 = ModelComponent(vao_name='wall', tex_id=2)
-            testcomponent3 = AABBColliderComponent()
-            testcomponent3.size = glm.vec3(20, 20, 2)
-            testcomponent4 = CharacterBody()
-
-            game_object2.addComponent(testcomponent3)
-            game_object2.addComponent(testcomponent2)
-            self.scene.add_entity(game_object2) 
-        # game_object2.addComponent(testcomponent4)
-
-        # game_object2.scale = glm.vec3(0.01, 0.01, 0.01)
-
-#  ---------------
+        game_manager_entity = GameObject()
+        game_manager = GameManager(self.scene)
+        game_manager_entity.add_component(game_manager)
+        self.scene.add_entity(game_manager_entity)
 
     def check_events(self):
         for event in pg.event.get():
@@ -229,22 +118,8 @@ class Engine:
             self.get_time()
             self.check_events()
 
-             # Render the scene to the low-resolution framebuffer
-            # low_res_fbo.use()
             self.ctx.screen.use()
-           
-            self.ctx.clear(0.1, 0.1, 0.1, depth=1.0)  # Clear to a dark gray
-
+            self.ctx.clear(0.0, 0.0, 0.0, depth=1.0)  # Clear to a dark gray
+            
             self.scene.update()
-
-            # Render the low-res texture to the full screen
-            # self.ctx.screen.use()
-            # self.ctx.clear(0.0, 0.0, 0.0, depth=1.0)  # Clear the screen
-
-            
-            # low_res_fbo.color_attachments[0].use(location=0)  # Use texture as input
-            # quad_vao.render(mgl.TRIANGLE_FAN)  # Draw the full-screen quad
-            
-
-            # Update the display
             pg.display.flip()

@@ -73,7 +73,7 @@ class GameObject:
             comonent = child.get_component(component_type)
         return comonent            
         
-    def addComponent(self, component) -> None:
+    def add_component(self, component) -> None:
         self.components.append(component)
         component.owner = self
 
